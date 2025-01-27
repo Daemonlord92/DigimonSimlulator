@@ -2,6 +2,7 @@ package com.horrorcore;
 
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class EventSystem {
@@ -164,10 +165,10 @@ public class EventSystem {
             case "Convert Digimon":
                 if (!tribes.isEmpty()) {
                     Tribe convertingTribe = tribes.get(random.nextInt(tribes.size()));
-                    List<Digimon> unaffiliatedDigimon = tribes.stream()
-                            .flatMap(tribe -> tribe.getMembers().stream())
+                    List<Digimon> unaffiliatedDigimon = tribes.parallelStream()
+                            .flatMap(tribe -> tribe.getMembers().parallelStream())
                             .filter(digimon -> digimon.getTribe() == null)
-                            .toList();
+                            .collect(Collectors.toList());
 
                     if (!unaffiliatedDigimon.isEmpty()) {
                         Digimon convertedDigimon = unaffiliatedDigimon.get(random.nextInt(unaffiliatedDigimon.size()));

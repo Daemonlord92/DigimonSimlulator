@@ -90,24 +90,6 @@ public class World {
         return sectors.get(random.nextInt(sectors.size()));
     }
 
-    public void addDigimonToSector(Digimon digimon, Sector sector) {
-        worldLock.writeLock().lock();
-        try {
-            sector.addDigimon(digimon);
-        } finally {
-            worldLock.writeLock().unlock();
-        }
-    }
-
-    public void removeDigimonFromSector(Digimon digimon, Sector sector) {
-        worldLock.writeLock().lock();
-        try {
-            sector.removeDigimon(digimon);
-        } finally {
-            worldLock.writeLock().unlock();
-        }
-    }
-
     /**
      * Initializes the sectors of the Digimon world and sets up their adjacencies.
      * This method creates ten different sectors, establishes their geographical relationships,
@@ -241,10 +223,10 @@ public class World {
                 }
                 List<Digimon> digimons = sector.getDigimons();
                 RebirthSystem.checkRebirth(digimons);
-                if (time % (random.nextInt(2) + 1) == 0){
+                if (time % (random.nextInt(2) + 1) == 0 && digimons.size() < 5000) {
                     BirthSystem.randomBirth(digimons);
                 }
-                if (time % 10 == 0) {
+                if (time % 5 == 0) {
                     EventSystem.triggerRandomEvent(digimons, tribes);
                 }
 
@@ -298,7 +280,7 @@ public class World {
             SwingUtilities.invokeLater(gui::updateDisplay);
 
             try {
-                Thread.sleep(3000); // Adjust as needed
+                Thread.sleep(1000); // Adjust as needed
             } catch (InterruptedException e) {
                 LOGGER.log(Level.WARNING, "Sleep interrupted", e);
                 Thread.currentThread().interrupt();
@@ -331,6 +313,14 @@ public class World {
         return null;
     }
 
+    /**
+     * Retrieves a list of all sectors in the world.
+     * This method attempts to acquire a read lock on the world state to ensure thread-safe access.
+     * If the lock cannot be acquired within 5 seconds, an empty list is returned.
+     *
+     * @return A new ArrayList containing all sectors in the world. If the lock cannot be acquired,
+     *         or if an InterruptedException occurs, an empty ArrayList is returned.
+     */
     public List<Sector> getSectors() {
         boolean lockAcquired = false;
         try {
@@ -363,6 +353,15 @@ public class World {
         running.set(false);
     }
 
+    /**
+     * Calculates the remaining time until the next technological age in the simulation.
+     * This method determines how many time units are left before the world advances to the next age
+     * based on the current time and the predefined age requirements.
+     *
+     * @return An integer representing the number of time units remaining until the next age.
+     *         If the current age is the final age, this method will return a negative value
+     *         indicating the number of time units that have passed since the last age transition.
+     */
     public int getTimeToNextAge() {
         int currentAgeIndex = Arrays.asList(technologySystem.AGES).indexOf(technologySystem.getCurrentAge());
         return agesRequired.get(currentAgeIndex) - time;

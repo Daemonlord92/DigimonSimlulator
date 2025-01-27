@@ -31,8 +31,8 @@ public class DigimonSimulator {
             System.out.println("Added Digimon: " + digimon.getName());
         }
     
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-    
+        ExecutorService executor = Executors.newCachedThreadPool();
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Shutting down...");
             executor.shutdownNow();

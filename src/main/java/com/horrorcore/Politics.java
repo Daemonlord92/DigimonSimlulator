@@ -18,6 +18,12 @@ public class Politics {
      * @param tribe2 The tribe being declared war upon.
      */
     public static void declareWar(Tribe tribe1, Tribe tribe2) {
+        tribe1.getMembers().stream().forEach(digimon -> {
+            digimon.setAggression(digimon.getAggression() + 75);
+        });
+        tribe2.getMembers().stream().forEach(digimon -> {
+            digimon.setAggression(digimon.getAggression() + 75);
+        });
         VisualGUI.getInstance(null).addEvent(tribe1.getName() + " has declared war on " + tribe2.getName() + "!", VisualGUI.EventType.POLITICAL);
     }
 

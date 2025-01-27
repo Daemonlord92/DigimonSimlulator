@@ -44,7 +44,7 @@ public class World {
      */
     public World() {
         this.digimonList = new ArrayList<>();
-        this.tribes = new ArrayList<>();
+        this.tribes = Tribe.getAllTribes();
         this.technologySystem = new TechnologySystem();
         this.time = 0;
         this.sectors = new ArrayList<>();
@@ -226,7 +226,7 @@ public class World {
                 }
                 List<Digimon> digimons = sector.getDigimons();
                 RebirthSystem.checkRebirth(digimons);
-                if (time % (random.nextInt(2) + 1) == 0 && digimons.size() < 50) {
+                if (time % (random.nextInt(2) + 1) == 0 && digimons.size() < 10) {
                     BirthSystem.randomBirth(digimons);
                 }
                 if (time % 5 == 0) {
@@ -266,6 +266,16 @@ public class World {
                     output.append(digimon.getStatusString()).append("\n");
                 }
             }
+
+                int totalDigimon = sectors.stream().mapToInt(sector -> sector.getDigimons().size()).sum();
+                double deathProbability = 0.05; // 5% chance of death per Digimon per time step
+                int expectedDeaths = (int) Math.round(totalDigimon * deathProbability);
+                int actualDeaths = random.nextInt(expectedDeaths * 2 + 1); // Allow for some variability
+
+                for (int i = 0; i < actualDeaths; i++) {
+                    simulateRandomDeath();
+                }
+
             gui.updateDisplay(); // Use the passed GUI instance
 
                 time++;
@@ -291,6 +301,32 @@ public class World {
             }
         }
     }
+/**
+ * Simulates a random death of a Digimon in the world without rebirth.
+ * This method has a small chance of removing a random Digimon from the world.
+ */
+private void simulateRandomDeath() {
+    if (random.nextInt(100) < 5) { // 5% chance of death occurring
+        List<Digimon> allDigimon = new ArrayList<>();
+        for (Sector sector : sectors) {
+            allDigimon.addAll(sector.getDigimons());
+        }
+        
+        if (!allDigimon.isEmpty()) {
+            Digimon unfortunateDigimon = allDigimon.get(random.nextInt(allDigimon.size()));
+            Sector digimonSector = sectors.stream()
+                .filter(sector -> sector.getDigimons().contains(unfortunateDigimon))
+                .findFirst()
+                .orElse(null);
+            
+            if (digimonSector != null) {
+                digimonSector.removeDigimon(unfortunateDigimon);
+                LOGGER.info(unfortunateDigimon.getName() + " has died in " + digimonSector.getName());
+                VisualGUI.getInstance(null).addEvent(unfortunateDigimon.getName() + " has died in " + digimonSector.getName(), VisualGUI.EventType.OTHER);
+            }
+        }
+    }
+}
 
     /**
      * Finds a potential target for the attacking Digimon within the current sector or adjacent sectors.

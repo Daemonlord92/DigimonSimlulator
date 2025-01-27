@@ -81,6 +81,7 @@ public class Tribe {
             nextId++;
             newTribe.addMember(leader);
             tribes.add(newTribe);
+            Tribe.allTribes.add(newTribe);
             VisualGUI.getInstance(null).addEvent(tribeName + " has been formed!", VisualGUI.EventType.POLITICAL);
         }
     }

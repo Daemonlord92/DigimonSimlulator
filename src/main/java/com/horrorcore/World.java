@@ -1,11 +1,9 @@
 package com.horrorcore;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -217,13 +215,18 @@ public class World {
                     }
 
                     if (digimon.getAge() <= 25 || digimon.getHealth() >= 15 && random.nextBoolean()) {
-                        sector.removeDigimon(digimon);
-                        sector.getAdjacentSectors().stream().findAny().ifPresent(adjacentSector -> adjacentSector.addDigimon(digimon));
+                        Optional<Sector> targetSectorOptional = sector.getAdjacentSectors().stream().findAny();
+                        if (targetSectorOptional.isPresent()) {
+                            sector.removeDigimon(digimon);
+                            Sector targetSector = targetSectorOptional.get();
+                            targetSector.addDigimon(digimon);
+                            VisualGUI.getInstance(null).addEvent(digimon.getName() + " has moved to sector " + targetSector.getName(), VisualGUI.EventType.OTHER);
+                        }
                     }
                 }
                 List<Digimon> digimons = sector.getDigimons();
                 RebirthSystem.checkRebirth(digimons);
-                if (time % (random.nextInt(2) + 1) == 0 && digimons.size() < 5000) {
+                if (time % (random.nextInt(2) + 1) == 0 && digimons.size() < 50) {
                     BirthSystem.randomBirth(digimons);
                 }
                 if (time % 5 == 0) {
@@ -343,6 +346,10 @@ public class World {
 
     public int getTime() {
         return time;
+    }
+
+    public int getBuildings() {
+        return tribes.stream().mapToInt(Tribe::getBuildings).sum();
     }
 
     public TechnologySystem getTechnologySystem() {

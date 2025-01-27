@@ -46,6 +46,6 @@ public class DigimonSimulator {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        });
+        }, "Simulation Thread");
     }
 }

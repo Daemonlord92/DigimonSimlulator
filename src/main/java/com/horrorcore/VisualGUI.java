@@ -206,23 +206,21 @@ public class VisualGUI {
                     int totalDigimon = world.getSectors().stream()
                             .mapToInt(s -> s.getDigimons().size())
                             .sum();
-                    int totalTribes = (int) world.getSectors().stream()
-                            .flatMap(s -> s.getDigimons().stream())
-                            .map(Digimon::getTribe)
-                            .distinct()
-                            .count();
                     int timeToNextTechAge = world.getTimeToNextAge();
+                    int totalBuildings = world.getBuildings();
                     worldInfoArea.setText(String.format(
                             "Time: %d\n" +
                                     "Technology Age: %s\n" +
                                     "Total Digimon: %d\n" +
                                     "Total Tribes: %d\n" +
-                                    "Time To Next Tech Age: %d\n",
+                                    "Time To Next Tech Age: %d\n" +
+                                    "Total Buildings: %d\n",
                             world.getTime(),
                             world.getTechnologySystem().getCurrentAge(),
                             totalDigimon,
-                            totalTribes,
-                            timeToNextTechAge
+                            Tribe.getAllTribes().size(),
+                            timeToNextTechAge,
+                            totalBuildings
                     ));
                 }
             } finally {

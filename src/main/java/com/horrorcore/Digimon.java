@@ -63,7 +63,25 @@ public class Digimon {
      * Reduces the hunger level of the Digimon.
      */
     public void eat() {
-        this.hunger -= 20;
+        int hungerReduction;
+        switch (this.stage) {
+            case "Rookie":
+                hungerReduction = 20;
+                break;
+            case "Champion":
+                hungerReduction = 30;
+                break;
+            case "Ultimate":
+                hungerReduction = 40;
+                break;
+            case "Mega":
+                hungerReduction = 50;
+                break;
+            default:
+                hungerReduction = 20; // Default to Rookie stage if stage is unknown
+                break;
+        }
+        this.hunger -= hungerReduction;
         if (this.hunger < 0) this.hunger = 0;
     }
 
@@ -74,7 +92,25 @@ public class Digimon {
      */
     public void attack(Digimon target) {
         if (this.aggression > 50) {
-            target.health -= 10;
+            int damage = 10;
+            switch (this.stage) {
+                case "Rookie":
+                    damage *= 2;
+                    break;
+                case "Champion":
+                    damage *= 3;
+                    break;
+                case "Ultimate":
+                    damage *= 4;
+                    break;
+                case "Mega":
+                    damage *= 5;
+                    break;
+                default:
+                    damage = 10; // Default to Rookie stage if stage is unknown
+                    break;
+            }
+            target.health -= damage;
             VisualGUI.getInstance(null).addEvent(this.name + " attacked " + target.name + "!", VisualGUI.EventType.ATTACK);
         }
     }
@@ -86,12 +122,17 @@ public class Digimon {
      * @throws IllegalArgumentException if the tribe name is null.
      */
     public void joinTribe(String tribeName) {
-        if (tribeName != null) {
-            this.tribe = new Tribe(tribeName);
-            VisualGUI.getInstance(null).addEvent(this.name + " joined the " + tribeName + " tribe.", VisualGUI.EventType.POLITICAL);
-        } else {
+        if (tribeName == null) {
             throw new IllegalArgumentException("Tribe name cannot be null.");
         }
+        for (Tribe tribe : Tribe.getAllTribes()) {
+            if (tribe.getName().equals(tribeName)) {
+                this.tribe = tribe;
+                tribe.getMembers().add(this);
+                VisualGUI.getInstance(null).addEvent(this.name + " joined the " + tribeName + " tribe.", VisualGUI.EventType.POLITICAL);
+            }
+        }
+
     }
 
     /**

@@ -9,7 +9,8 @@ public class Tribe {
     private int id;
     private String name;
     private List<Digimon> members;
-    private int buildings;
+    private int buildings = 0;
+    private static List<Tribe> allTribes = new ArrayList<>();
 
     /**
      * Constructs a new Tribe with a given name and automatically assigned ID.
@@ -40,6 +41,10 @@ public class Tribe {
         this.id = id;
         this.name = name;
         this.members = new ArrayList<>();
+    }
+
+    public static List<Tribe> getAllTribes() {
+        return allTribes;
     }
 
     /**
@@ -111,5 +116,9 @@ public class Tribe {
 
     public void setMembers(List<Digimon> members) {
         this.members = members;
+    }
+
+    public int getBuildings() {
+        return buildings;
     }
 }

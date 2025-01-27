@@ -168,7 +168,7 @@ public class EventSystem {
                     List<Digimon> unaffiliatedDigimon = tribes.parallelStream()
                             .flatMap(tribe -> tribe.getMembers().parallelStream())
                             .filter(digimon -> digimon.getTribe() == null)
-                            .collect(Collectors.toList());
+                            .toList();
 
                     if (!unaffiliatedDigimon.isEmpty()) {
                         Digimon convertedDigimon = unaffiliatedDigimon.get(random.nextInt(unaffiliatedDigimon.size()));

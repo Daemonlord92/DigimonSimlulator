@@ -1,0 +1,370 @@
+package com.horrorcore;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import javax.swing.*;
+import java.awt.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * Represents the Digimon world, containing all the elements and systems of the simulation.
+ * This class manages the overall state of the world, including Digimons, tribes, sectors,
+ * and various systems like technology and evolution.
+ */
+public class World {
+    private static final Logger LOGGER = Logger.getLogger(World.class.getName());
+    private List<Digimon> digimonList;
+    private List<Tribe> tribes;
+    private TechnologySystem technologySystem;
+    private int time;
+    private List<Sector> sectors;
+    private Random random;
+    private final ReadWriteLock worldLock = new ReentrantReadWriteLock();
+    private final AtomicBoolean running = new AtomicBoolean(true);
+    private final List<Integer> agesRequired = List.of(500, 1000, 1500, 2000);
+
+
+    /**
+     * Constructs a new World object, initializing all its components.
+     * This constructor sets up the initial state of the Digimon world, including:
+     * - An empty list of Digimons
+     * - An empty list of Tribes
+     * - A new TechnologySystem
+     * - The initial time set to 0
+     * - An empty list of Sectors
+     * - A new Random object for generating random events
+     *
+     * After initializing these components, it calls the initializeSectors() method
+     * to set up the world's geographical structure.
+     */
+    public World() {
+        this.digimonList = new ArrayList<>();
+        this.tribes = new ArrayList<>();
+        this.technologySystem = new TechnologySystem();
+        this.time = 0;
+        this.sectors = new ArrayList<>();
+        this.random = new Random();
+    }
+
+    /**
+     * Adds a Digimon to a randomly selected sector in the world.
+     * This method chooses a random sector from the list of available sectors
+     * and adds the given Digimon to that sector.
+     *
+     * @param digimon The Digimon to be added to the world. This Digimon will be
+     *                placed in a randomly chosen sector.
+     */
+    public void addDigimon(Digimon digimon) {
+        if (digimon == null) {
+            LOGGER.warning("Attempted to add null Digimon to the world");
+            return;
+        }
+        boolean lockAcquired = false;
+        try {
+            lockAcquired = worldLock.writeLock().tryLock(5, TimeUnit.SECONDS);
+            if (!lockAcquired) {
+                LOGGER.warning("Failed to acquire write lock within 5 seconds. Skipping addDigimon operation.");
+                return;
+            }
+            Sector randomSector = getRandomSector();
+            randomSector.addDigimon(digimon);
+            LOGGER.info("Added Digimon " + digimon.getName() + " to sector " + randomSector.getName());
+        } catch (InterruptedException e) {
+            LOGGER.log(Level.WARNING, "Interrupted while trying to acquire lock", e);
+            Thread.currentThread().interrupt();
+        } finally {
+            if (lockAcquired) {
+                worldLock.writeLock().unlock();
+            }
+        }
+    }
+
+    private Sector getRandomSector() {
+        return sectors.get(random.nextInt(sectors.size()));
+    }
+
+    public void addDigimonToSector(Digimon digimon, Sector sector) {
+        worldLock.writeLock().lock();
+        try {
+            sector.addDigimon(digimon);
+        } finally {
+            worldLock.writeLock().unlock();
+        }
+    }
+
+    public void removeDigimonFromSector(Digimon digimon, Sector sector) {
+        worldLock.writeLock().lock();
+        try {
+            sector.removeDigimon(digimon);
+        } finally {
+            worldLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Initializes the sectors of the Digimon world and sets up their adjacencies.
+     * This method creates ten different sectors, establishes their geographical relationships,
+     * and adds them to the world's list of sectors.
+     *
+     * The sectors created are:
+     * - File Island
+     * - Server Continent
+     * - Folder Continent
+     * - WWW Continent
+     * - Net Ocean
+     * - Desert Region
+     * - Frozen Tundra
+     * - Volcanic Zone
+     * - Sky City
+     * - Underground Caverns
+     *
+     * Each sector is connected to one or more adjacent sectors to create a coherent world map.
+     *
+     * This method does not take any parameters and does not return any value.
+     * It operates on the class-level 'sectors' list, populating it with the created Sector objects.
+     */
+    public void initialize() {
+        // Create all sectors here
+        Sector fileIsland = new Sector("File Island");
+        Sector serverContinent = new Sector("Server Continent");
+        Sector folderContinent = new Sector("Folder Continent");
+        Sector wwwContinent = new Sector("WWW Continent");
+        Sector netOcean = new Sector("Net Ocean");
+        Sector desertRegion = new Sector("Desert Region");
+        Sector frozenTundra = new Sector("Frozen Tundra");
+        Sector volcanicZone = new Sector("Volcanic Zone");
+        Sector skyCity = new Sector("Sky City");
+        Sector undergroundCaverns = new Sector("Underground Caverns");
+
+        // Set up adjacencies
+        fileIsland.addAdjacentSector(serverContinent);
+        fileIsland.addAdjacentSector(netOcean);
+
+        serverContinent.addAdjacentSector(folderContinent);
+        serverContinent.addAdjacentSector(desertRegion);
+
+        folderContinent.addAdjacentSector(wwwContinent);
+        folderContinent.addAdjacentSector(frozenTundra);
+
+        wwwContinent.addAdjacentSector(fileIsland);
+        wwwContinent.addAdjacentSector(volcanicZone);
+
+        netOcean.addAdjacentSector(desertRegion);
+        netOcean.addAdjacentSector(skyCity);
+
+        desertRegion.addAdjacentSector(frozenTundra);
+        desertRegion.addAdjacentSector(undergroundCaverns);
+
+        frozenTundra.addAdjacentSector(volcanicZone);
+
+        volcanicZone.addAdjacentSector(skyCity);
+
+        skyCity.addAdjacentSector(undergroundCaverns);
+
+        List<Sector> sectorList = Arrays.asList(
+                fileIsland,
+                serverContinent,
+                folderContinent,
+                wwwContinent,
+                netOcean,
+                desertRegion,
+                frozenTundra,
+                volcanicZone,
+                skyCity,
+                undergroundCaverns);
+        for (Sector sector : sectorList) {
+            addSector(sector);
+        }
+    }
+
+    private void addSector(Sector sector) {
+        sectors.add(sector);
+    }
+
+    /**
+     * Simulates the progression of the Digimon world over time.
+     * This method runs in an infinite loop, updating the state of the world at each time step.
+     * It handles Digimon aging, evolution, movement, combat, birth, rebirth, and tribe formation.
+     * It also manages technological advancement and displays the status of each sector and its Digimons.
+     *
+     * The simulation performs the following actions:
+     * - Ages up Digimons and checks for evolution
+     * - Initiates combat between aggressive Digimons
+     * - Moves Digimons between sectors
+     * - Checks for rebirth and initiates random births
+     * - Triggers random events
+     * - Forms new tribes and builds cities
+     * - Advances the technological age
+     * - Displays the status of all Digimons in each sector
+     *
+     * The simulation pauses for 3 seconds between each time step to allow for observation.
+     *
+     * This method does not take any parameters and does not return any value as it runs indefinitely.
+     */
+    public void simulate(VisualGUI gui) {
+        System.out.println("Simulation started with GUI: " + gui);
+        while (running.get()) {
+            boolean lockAcquired = false;
+            try {
+                lockAcquired = worldLock.writeLock().tryLock(5, TimeUnit.SECONDS);
+                if (!lockAcquired) {
+                    LOGGER.warning("Failed to acquire write lock within 5 seconds. Skipping this simulation step.");
+                    continue;
+                }
+                StringBuilder output = new StringBuilder();
+                output.append("\n--- Time: ").append(time).append(" ---\n");
+                output.append("Current Age: ").append(technologySystem.getCurrentAge()).append("\n");
+
+                for (Sector sector : sectors) {
+                for (Digimon digimon : new ArrayList<>(sector.getDigimons())) {
+                    digimon.ageUp();
+                    EvolutionSystem.checkEvolution(digimon);
+
+                    if (digimon.getAggression() > 50) {
+                        Digimon target = findTarget(digimon, sector);
+                        if (target != null) {
+                            digimon.attack(target);
+                        }
+                    }
+
+                    if (digimon.getAge() <= 25 || digimon.getHealth() >= 15 && random.nextBoolean()) {
+                        sector.removeDigimon(digimon);
+                        sector.getAdjacentSectors().stream().findAny().ifPresent(adjacentSector -> adjacentSector.addDigimon(digimon));
+                    }
+                }
+                List<Digimon> digimons = sector.getDigimons();
+                RebirthSystem.checkRebirth(digimons);
+                if (time % (random.nextInt(2) + 1) == 0){
+                    BirthSystem.randomBirth(digimons);
+                }
+                if (time % 10 == 0) {
+                    EventSystem.triggerRandomEvent(digimons, tribes);
+                }
+
+                if (time % 2 == 0 && random.nextBoolean()) {
+                    Tribe.formNewTribe(digimons, tribes);
+                    if (!tribes.isEmpty()) {
+                        Tribe.buildCity(tribes.get(random.nextInt(tribes.size())));
+                    }
+                }
+
+                if (digimons.isEmpty()) {
+                    for (int i = 0; i < 5; i++) {
+                        Digimon newDigimon = DigimonGenerator.generateRandomDigimon();
+                        sector.addDigimon(newDigimon);
+                    }
+                }
+                if(random.nextBoolean()) {
+                    FoodSystem.distributeFood(digimons);
+                }
+
+            }
+
+            // Update political relationships
+            int currentAgeIndex = Arrays.asList(technologySystem.AGES).indexOf(technologySystem.getCurrentAge());
+            // Advance technological age
+            if (time == agesRequired.get(currentAgeIndex)) {
+                technologySystem.advanceAge();
+            }
+
+            // Replace console output with GUI updates
+            for (Sector sector : sectors) {
+                output.append("\nSector: ").append(sector.getName()).append("\n");
+                for (Digimon digimon : sector.getDigimons()) {
+                    output.append(digimon.getStatusString()).append("\n");
+                }
+            }
+            gui.updateDisplay(); // Use the passed GUI instance
+
+                time++;
+            } catch (InterruptedException e) {
+                LOGGER.log(Level.WARNING, "Simulation interrupted", e);
+                Thread.currentThread().interrupt();
+                break;
+            } finally {
+                if (lockAcquired) {
+                    worldLock.writeLock().unlock();
+                }
+            }
+
+            // Update GUI on EDT
+            SwingUtilities.invokeLater(gui::updateDisplay);
+
+            try {
+                Thread.sleep(3000); // Adjust as needed
+            } catch (InterruptedException e) {
+                LOGGER.log(Level.WARNING, "Sleep interrupted", e);
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+    }
+
+    /**
+     * Finds a potential target for the attacking Digimon within the current sector or adjacent sectors.
+     *
+     * This method creates a list of possible targets by combining all Digimon in the current sector
+     * and its adjacent sectors, excluding the attacker itself. It then randomly selects a target
+     * from this list if it's not empty.
+     *
+     * @param attacker The Digimon initiating the attack.
+     * @param currentSector The sector where the attacker is currently located.
+     * @return A randomly selected Digimon target from the current or adjacent sectors, or null if no targets are available.
+     */
+    private Digimon findTarget(Digimon attacker, Sector currentSector) {
+        List<Digimon> possibleTargets = new ArrayList<>(currentSector.getDigimons());
+        for (Sector adjacentSector : currentSector.getAdjacentSectors()) {
+            possibleTargets.addAll(adjacentSector.getDigimons());
+        }
+        possibleTargets.remove(attacker);
+
+        if (!possibleTargets.isEmpty()) {
+            return possibleTargets.get(random.nextInt(possibleTargets.size()));
+        }
+        return null;
+    }
+
+    public List<Sector> getSectors() {
+        boolean lockAcquired = false;
+        try {
+            lockAcquired = worldLock.readLock().tryLock(5, TimeUnit.SECONDS);
+            if (!lockAcquired) {
+                LOGGER.warning("Failed to acquire read lock within 5 seconds. Returning empty sector list.");
+                return new ArrayList<>();
+            }
+            return new ArrayList<>(sectors);
+        } catch (InterruptedException e) {
+            LOGGER.log(Level.WARNING, "Interrupted while trying to acquire lock", e);
+            Thread.currentThread().interrupt();
+            return new ArrayList<>();
+        } finally {
+            if (lockAcquired) {
+                worldLock.readLock().unlock();
+            }
+        }
+    }
+
+    public int getTime() {
+        return time;
+    }
+
+    public TechnologySystem getTechnologySystem() {
+        return technologySystem;
+    }
+
+    public void stop() {
+        running.set(false);
+    }
+
+    public int getTimeToNextAge() {
+        int currentAgeIndex = Arrays.asList(technologySystem.AGES).indexOf(technologySystem.getCurrentAge());
+        return agesRequired.get(currentAgeIndex) - time;
+    }
+}

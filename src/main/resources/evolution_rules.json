@@ -1,0 +1,101 @@
+{
+  "Botamon": {
+    "Fresh": "Koromon:In-Training"
+  },
+  "Koromon": {
+    "In-Training": "Agumon:Rookie"
+  },
+  "Agumon": {
+    "Rookie": "Greymon:Champion",
+    "Champion": "MetalGreymon:Ultimate",
+    "Ultimate": "WarGreymon:Mega"
+  },
+  "Punimon": {
+    "Fresh": "Tsunomon:In-Training"
+  },
+  "Tsunomon": {
+    "In-Training": "Gabumon:Rookie"
+  },
+  "Gabumon": {
+    "Rookie": "Garurumon:Champion",
+    "Champion": "WereGarurumon:Ultimate",
+    "Ultimate": "MetalGarurumon:Mega"
+  },
+  "Poyomon": {
+    "Fresh": "Tokomon:In-Training"
+  },
+  "Tokomon": {
+    "In-Training": "Patamon:Rookie"
+  },
+  "Patamon": {
+    "Rookie": "Angemon:Champion",
+    "Champion": "MagnaAngemon:Ultimate",
+    "Ultimate": "Seraphimon:Mega"
+  },
+  "YukimiBotamon": {
+    "Fresh": "Nyaromon:In-Training"
+  },
+  "Nyaromon": {
+    "In-Training": "Salamon:Rookie"
+  },
+  "Salamon": {
+    "Rookie": "Gatomon:Champion",
+    "Champion": "Angewomon:Ultimate",
+    "Ultimate": "Ophanimon:Mega"
+  },
+  "Kuramon": {
+    "Fresh": "Tsumemon:In-Training"
+  },
+  "Tsumemon": {
+    "In-Training": "Keramon:Rookie"
+  },
+  "Keramon": {
+    "Rookie": "Chrysalimon:Champion",
+    "Champion": "Infermon:Ultimate",
+    "Ultimate": "Diaboromon:Mega"
+  },
+  "Mokumon": {
+    "Fresh": "DemiMeramon:In-Training"
+  },
+  "DemiMeramon": {
+    "In-Training": "Candlemon:Rookie"
+  },
+  "Candlemon": {
+    "Rookie": "Meramon:Champion",
+    "Champion": "SkullMeramon:Ultimate",
+    "Ultimate": "Boltmon:Mega"
+  },
+  "Pabumon": {
+    "Fresh": "Motimon:In-Training"
+  },
+  "Motimon": {
+    "In-Training": "Tentomon:Rookie"
+  },
+  "Tentomon": {
+    "Rookie": "Kabuterimon:Champion",
+    "Champion": "MegaKabuterimon:Ultimate",
+    "Ultimate": "HerculesKabuterimon:Mega"
+  },
+  "Jyarimon": {
+    "Fresh": "Gigimon:In-Training"
+  },
+  "Gigimon": {
+    "In-Training": "Guilmon:Rookie"
+  },
+  "Guilmon": {
+    "Rookie": "Growlmon:Champion",
+    "Champion": "WarGrowlmon:Ultimate",
+    "Ultimate": "Gallantmon:Mega"
+  },
+  "Zerimon": {
+    "Fresh": "Gummymon:In-Training"
+  },
+  "Gummymon": {
+    "In-Training": "Terriermon:Rookie"
+  },
+  "Terriermon": {
+    "Rookie": "Gargomon:Champion",
+    "Champion": "Rapidmon:Ultimate",
+    "Ultimate": "MegaGargomon:Mega"
+  }
+}

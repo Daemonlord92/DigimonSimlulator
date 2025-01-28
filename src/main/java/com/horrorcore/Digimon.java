@@ -13,16 +13,11 @@ public class Digimon {
     private Tribe tribe;
     private String stage;
     private int friendship;
+    private String profession;
+    private List<Digimon> friends;
 
     /**
      * Constructs a new Digimon with the specified attributes.
-     *
-     * @param name       The name of the Digimon.
-     * @param age        The age of the Digimon.
-     * @param health     The health points of the Digimon.
-     * @param hunger     The hunger level of the Digimon.
-     * @param aggression The aggression level of the Digimon.
-     * @param stage      The current evolutionary stage of the Digimon.
      */
     public Digimon(String name, int age, int health, int hunger, int aggression, String stage) {
         this.name = name;
@@ -31,98 +26,54 @@ public class Digimon {
         this.hunger = hunger;
         this.aggression = aggression;
         this.stage = stage;
-        this.tribe = null; // Initially, no tribe
+        this.tribe = null;
+        this.friendship = 0;
+        this.profession = null;
+        this.friends = new ArrayList<>();
     }
 
     /**
      * Constructs a new Digimon by copying the attributes of another Digimon.
-     *
-     * @param other The Digimon to copy attributes from.
      */
     public Digimon(Digimon other) {
-        this.name = other.name;
-        this.age = other.age;
-        this.health = other.health;
-        this.hunger = other.hunger;
-        this.aggression = other.aggression;
-        this.stage = other.stage;
-        this.tribe = null;
+        this(other.name, other.age, other.health, other.hunger, other.aggression, other.stage);
     }
 
-    /**
-     * Increases the age of the Digimon and adjusts its attributes accordingly.
-     * Increases hunger and potentially decreases health for older Digimon.
-     */
+    // Lifecycle methods
+
     public void ageUp() {
         this.age++;
-        this.hunger += 10; // Increase hunger with age
+        this.hunger += 10;
         if (this.age > 20) {
-            this.health -= 5; // Health declines with old age
+            this.health -= 5;
         }
     }
 
-    /**
-     * Reduces the hunger level of the Digimon.
-     */
     public void eat() {
-        int hungerReduction;
-        switch (this.stage) {
-            case "Rookie":
-                hungerReduction = 20;
-                break;
-            case "Champion":
-                hungerReduction = 30;
-                break;
-            case "Ultimate":
-                hungerReduction = 40;
-                break;
-            case "Mega":
-                hungerReduction = 50;
-                break;
-            default:
-                hungerReduction = 20; // Default to Rookie stage if stage is unknown
-                break;
-        }
-        this.hunger -= hungerReduction;
-        if (this.hunger < 0) this.hunger = 0;
+        int hungerReduction = switch (this.stage) {
+            case "Rookie" -> 20;
+            case "Champion" -> 30;
+            case "Ultimate" -> 40;
+            case "Mega" -> 50;
+            default -> 20;
+        };
+        this.hunger = Math.max(0, this.hunger - hungerReduction);
     }
 
-    /**
-     * Attempts to attack another Digimon if this Digimon's aggression is high enough.
-     *
-     * @param target The Digimon to attack.
-     */
     public void attack(Digimon target) {
         if (this.aggression > 50) {
-            int damage = 10;
-            switch (this.stage) {
-                case "Rookie":
-                    damage *= 2;
-                    break;
-                case "Champion":
-                    damage *= 3;
-                    break;
-                case "Ultimate":
-                    damage *= 4;
-                    break;
-                case "Mega":
-                    damage *= 5;
-                    break;
-                default:
-                    damage = 10; // Default to Rookie stage if stage is unknown
-                    break;
-            }
+            int damage = switch (this.stage) {
+                case "Rookie" -> 20;
+                case "Champion" -> 30;
+                case "Ultimate" -> 40;
+                case "Mega" -> 50;
+                default -> 10;
+            };
             target.health -= damage;
             VisualGUI.getInstance(null).addEvent(this.name + " attacked " + target.name + "!", VisualGUI.EventType.ATTACK);
         }
     }
 
-    /**
-     * Assigns the Digimon to a tribe.
-     *
-     * @param tribeName The name of the tribe to join.
-     * @throws IllegalArgumentException if the tribe name is null.
-     */
     public void joinTribe(String tribeName) {
         if (tribeName == null) {
             throw new IllegalArgumentException("Tribe name cannot be null.");
@@ -132,228 +83,102 @@ public class Digimon {
                 this.tribe = tribe;
                 tribe.getMembers().add(this);
                 VisualGUI.getInstance(null).addEvent(this.name + " joined the " + tribeName + " tribe.", VisualGUI.EventType.POLITICAL);
+                break;
             }
         }
-
     }
 
-    /**
-     * Evolves the Digimon to a new stage, updating its name and attributes.
-     *
-     * @param newName  The new name of the Digimon after evolution.
-     * @param newStage The new evolutionary stage of the Digimon.
-     */
     public void evolve(String newName, String newStage) {
         VisualGUI.getInstance(null).addEvent(this.name + " is evolving to " + newStage + " stage!", VisualGUI.EventType.OTHER);
 
-        // Update name and stage
         this.name = newName;
         this.stage = newStage;
 
-        // Adjust attributes based on the new stage
         switch (newStage) {
-            case "Rookie":
-                this.health += 20;
-                this.aggression += 10;
-                break;
-            case "Champion":
-                this.health += 40;
-                this.aggression += 20;
-                break;
-            case "Ultimate":
-                this.health += 60;
-                this.aggression += 30;
-                break;
-            case "Mega":
-                this.health += 80;
-                this.aggression += 40;
-                break;
-            default:
-                VisualGUI.getInstance(null).addEvent("Unknown stage: " + newStage, VisualGUI.EventType.OTHER);
-                break;
+            case "In-Training" -> { this.health += 10; this.aggression += 5; }
+            case "Rookie" -> { this.health += 20; this.aggression += 10; }
+            case "Champion" -> { this.health += 40; this.aggression += 20; }
+            case "Ultimate" -> { this.health += 60; this.aggression += 30; }
+            case "Mega" -> { this.health += 80; this.aggression += 40; }
+            default -> VisualGUI.getInstance(null).addEvent("Unknown stage: " + newStage, VisualGUI.EventType.OTHER);
         }
 
         VisualGUI.getInstance(null).addEvent(this.name + " has evolved to " + this.stage + " stage!", VisualGUI.EventType.OTHER);
     }
 
-    /**
-     * Gets the name of the Digimon.
-     *
-     * @return The name of the Digimon.
-     */
-    public String getName() {
-        return name;
+    // Friendship methods
+
+    public void increaseFriendship(Digimon tribeMember, int friendshipPoints) {
+        this.friendship += friendshipPoints;
+        this.friends.add(tribeMember);
     }
 
-    /**
-     * Sets the name of the Digimon.
-     *
-     * @param name The new name for the Digimon.
-     */
-    public void setName(String name) {
-        this.name = name;
+    public void decreaseFriendship(Digimon digimon, int friendship) {
+        this.friendship -= friendship;
+        this.friends.remove(digimon);
     }
 
-    /**
-     * Gets the age of the Digimon.
-     *
-     * @return The age of the Digimon.
-     */
-    public int getAge() {
-        return age;
-    }
+    // Getters and Setters
 
-    /**
-     * Sets the age of the Digimon.
-     *
-     * @param age The new age for the Digimon.
-     */
-    public void setAge(int age) {
-        this.age = age;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    /**
-     * Gets the health of the Digimon.
-     *
-     * @return The health points of the Digimon.
-     */
-    public int getHealth() {
-        return health;
-    }
+    public int getAge() { return age; }
+    public void setAge(int age) { this.age = age; }
 
-    /**
-     * Sets the health of the Digimon.
-     *
-     * @param health The new health points for the Digimon.
-     */
-    public void setHealth(int health) {
-        this.health = health;
-    }
+    public int getHealth() { return health; }
+    public void setHealth(int health) { this.health = health; }
 
-    /**
-     * Gets the hunger level of the Digimon.
-     *
-     * @return The hunger level of the Digimon.
-     */
-    public int getHunger() {
-        return hunger;
-    }
+    public int getHunger() { return hunger; }
+    public void setHunger(int hunger) { this.hunger = hunger; }
 
-    /**
-     * Sets the hunger level of the Digimon.
-     *
-     * @param hunger The new hunger level for the Digimon.
-     */
-    public void setHunger(int hunger) {
-        this.hunger = hunger;
-    }
+    public int getAggression() { return aggression; }
+    public void setAggression(int aggression) { this.aggression = aggression; }
 
-    /**
-     * Gets the aggression level of the Digimon.
-     *
-     * @return The aggression level of the Digimon.
-     */
-    public int getAggression() {
-        return aggression;
-    }
+    public Tribe getTribe() { return tribe; }
+    public void setTribe(Tribe tribe) { this.tribe = tribe; }
 
-    /**
-     * Sets the aggression level of the Digimon.
-     *
-     * @param aggression The new aggression level for the Digimon.
-     */
-    public void setAggression(int aggression) {
-        this.aggression = aggression;
-    }
+    public String getTribeName() { return tribe != null ? tribe.getName() : null; }
 
-    /**
-     * Gets the tribe of the Digimon.
-     *
-     * @return The Tribe object representing the Digimon's tribe.
-     */
-    public Tribe getTribe() {
-        return tribe;
-    }
+    public String getStage() { return stage; }
+    public void setStage(String stage) { this.stage = stage; }
 
-    /**
-     * Gets the name of the Digimon's tribe.
-     *
-     * @return The name of the Digimon's tribe.
-     */
-    public String getTribeName() {
-        return tribe.getName();
-    }
+    public int getFriendship() { return friendship; }
+    public void setFriendship(int friendship) { this.friendship = friendship; }
 
-    /**
-     * Sets the tribe of the Digimon.
-     *
-     * @param tribeName The name of the new tribe for the Digimon.
-     * @throws IllegalArgumentException if the tribe name is null.
-     */
-    public void setTribe(String tribeName) {
-        if (tribeName != null) {
-            this.tribe = new Tribe(tribeName);
-            VisualGUI.getInstance(null).addEvent(this.name + " joined the " + tribeName + " tribe.", VisualGUI.EventType.POLITICAL);
-        } else {
-            throw new IllegalArgumentException("Tribe name cannot be null.");
-        }
-    }
+    public String getProfession() { return profession; }
+    public void setProfession(String profession) { this.profession = profession; }
 
-    /**
-     * Gets the current evolutionary stage of the Digimon.
-     *
-     * @return The current stage of the Digimon.
-     */
-    public String getStage() {
-        return stage;
-    }
+    public List<Digimon> getFriends() { return friends; }
+    public void setFriends(List<Digimon> friends) { this.friends = friends; }
 
-    /**
-     * Sets the evolutionary stage of the Digimon.
-     *
-     * @param stage The new stage for the Digimon.
-     */
-    public void setStage(String stage) {
-        this.stage = stage;
-    }
-    /**
-     * Returns a string representation of the Digimon's current status.
-     * 
-     * This method provides a concise summary of the Digimon's attributes,
-     * including its name, age, health, hunger level, aggression level, and tribe affiliation.
-     * 
-     * @return A string containing the Digimon's status information, formatted as:
-     *         "Name: [name], Age: [age], Health: [health], Hunger: [hunger], 
-     *         Aggression: [aggression], Tribe: [tribeName or 'independent']"
-     */
+    // Utility methods
+
     public String getStatusString() {
-        return "Name: " + this.name + ", Age: " + this.age + ", Health: " + this.health +
-                ", Hunger: " + this.hunger + ", Aggression: " + this.aggression + ", Tribe: "
-                + (this.tribe != null ? this.tribe.getName():"independent");
+        return "Name: " + this.name + 
+               ", Age: " + this.age + 
+               ", Health: " + this.health +
+               ", Hunger: " + this.hunger + 
+               ", Aggression: " + this.aggression + 
+               ", Stage: " + this.stage +
+               ", Profession: " + (this.profession != null ? this.profession : "None") +
+               ", Tribe: " + (this.tribe != null ? this.tribe.getName() : "Independent");
     }
 
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Digimon digimon)) return false;
-        return getAge() == digimon.getAge()
-                && getHealth() == digimon.getHealth()
-                && getHunger() == digimon.getHunger()
-                && getAggression() == digimon.getAggression()
-                && Objects.equals(getName(), digimon.getName())
-                && Objects.equals(getTribe(), digimon.getTribe())
-                && Objects.equals(getStage(), digimon.getStage());
+        return age == digimon.age &&
+               health == digimon.health &&
+               hunger == digimon.hunger &&
+               aggression == digimon.aggression &&
+               Objects.equals(name, digimon.name) &&
+               Objects.equals(tribe, digimon.tribe) &&
+               Objects.equals(stage, digimon.stage);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getName(), getAge(), getHealth(), getHunger(), getAggression(), getTribe(), getStage());
-    }
-
-    public void increaseFriendship(Digimon tribeMember, int friendshipPoints) {
-
-    }
-
-    public void decreaseFriendship(Digimon digimon, int friendship) {
-
+        return Objects.hash(name, age, health, hunger, aggression, tribe, stage);
     }
 }

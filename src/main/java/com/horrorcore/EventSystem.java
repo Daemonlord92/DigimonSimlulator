@@ -2,229 +2,284 @@ package com.horrorcore;
 
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class EventSystem {
+    private static final Random random = new Random();
+
     private static final String[] POLITICAL_EVENTS = {
-            "Alliance Formed", "War Declared", "Tribe Split", "New Leader Elected", 
-            "Convert Digimon", "Make Peace", "Trade Agreement", "Cultural Exchange",
-            "Diplomatic Mission", "Espionage"
+        "Alliance Formed", "War Declared", "Tribe Split", "New Leader Elected", 
+        "Convert Digimon", "Make Peace", "Trade Agreement", "Cultural Exchange",
+        "Diplomatic Mission", "Espionage", "Form New Tribe", "Build City"
     };
+
     private static final String[] NATURAL_EVENTS = {
-            "Food Shortage", "Plague", "Storm", "Earthquake"
+        "Food Shortage", "Plague", "Storm", "Earthquake"
     };
 
-    public static Random random = new Random();
-
-    /**
-     * Triggers a random event in the Digimon world, which can be political, natural, or healing.
-     * The event is chosen randomly and its effects are applied to the Digimon and tribes.
-     *
-     * @param world using the current state of the Digimon world.
-     */
     public static void triggerRandomEvent(World world) {
         int eventType = random.nextInt(3); // 0: Political, 1: Natural, 2: Healing
 
         switch (eventType) {
             case 0:
-                String politicalEvent = POLITICAL_EVENTS[random.nextInt(POLITICAL_EVENTS.length)];
-                VisualGUI.getInstance(null).addEvent("Political Event: " + politicalEvent, VisualGUI.EventType.POLITICAL);
-                handlePoliticalEvent(world, politicalEvent);
+                handlePoliticalEvent(world);
                 break;
             case 1:
-                String naturalEvent = NATURAL_EVENTS[random.nextInt(NATURAL_EVENTS.length)];
-                VisualGUI.getInstance(null).addEvent("Natural Event: " + naturalEvent, VisualGUI.EventType.OTHER);
-                handleNaturalEvent(world, naturalEvent);
+                handleNaturalEvent(world);
                 break;
             case 2:
-                VisualGUI.getInstance(null).addEvent("Healing Event: A mysterious force heals all Digimon!", VisualGUI.EventType.OTHER);
-                world.getSectors().stream()
-                        .flatMap(sector -> sector.getDigimons().stream())
-                        .forEach(digimon -> digimon.setHealth(100));
+                handleHealingEvent(world);
                 break;
         }
     }
 
-    /**
-     * Handles various political events that can occur between tribes in the Digimon world.
-     * This method processes different types of political events such as forming alliances,
-     * declaring war, making trade agreements, and more. Each event type has its own set of
-     * effects on the tribes and their member Digimon.
-     *
-     * @param world Current instance of the Digimon world.
-     * @param event A string representing the type of political event to be handled. Valid
-     *              events include "Alliance Formed", "War Declared", "Trade Agreement",
-     *              "Cultural Exchange", "Diplomatic Mission", "Espionage", "Convert Digimon",
-     *              and "Make Peace".
-     */
-    private static void handlePoliticalEvent(World world, String event) {
-        List<Tribe> tribes = world.getTribes();
+    private static void handlePoliticalEvent(World world) {
+        String politicalEvent = POLITICAL_EVENTS[random.nextInt(POLITICAL_EVENTS.length)];
+        VisualGUI.getInstance(null).addEvent("Political Event: " + politicalEvent, VisualGUI.EventType.POLITICAL);
 
-        switch (event) {
+        switch (politicalEvent) {
             case "Alliance Formed":
-                if (tribes.size() >= 2) {
-                    Tribe tribeA = tribes.get(random.nextInt(tribes.size()));
-                    Tribe tribeB = tribes.get(random.nextInt(tribes.size()));
-                    if (tribeA != tribeB) {
-                        Politics.formAlliance(tribeA, tribeB);
-                        world.getSectors().stream()
-                                .flatMap(sector -> sector.getDigimons().stream())
-                                .forEach(digimon -> {
-                                    if (digimon.getTribe() == tribeA || digimon.getTribe() == tribeB) {
-                                        digimon.setAggression(digimon.getAggression() + 100);
-                                    } else if (digimon.getTribe() != null) {
-                                        digimon.setAggression(digimon.getAggression() + 50);
-                                    } else {
-                                        digimon.setAggression(digimon.getAggression() + 26);
-                                    }
-                                });
-                    }
-                }
+                handleAllianceFormed(world);
                 break;
             case "War Declared":
-                if (tribes.size() >= 2) {
-                    Tribe tribeA = tribes.get(random.nextInt(tribes.size()));
-                    Tribe tribeB = tribes.get(random.nextInt(tribes.size()));
-                    if (tribeA != tribeB) {
-                        Politics.declareWar(tribeA, tribeB);
-                        world.getSectors().stream()
-                                .flatMap(sector -> sector.getDigimons().stream())
-                                .forEach(digimon -> {
-                                    if (digimon.getTribe() == tribeA || digimon.getTribe() == tribeB) {
-                                        digimon.setAggression(digimon.getAggression() + 100);
-                                    } else if (digimon.getTribe() != null) {
-                                        digimon.setAggression(digimon.getAggression() + 50);
-                                    } else {
-                                        digimon.setAggression(digimon.getAggression() + 26);
-                                    }
-                                });
-                    }
-                }
+                handleWarDeclared(world);
                 break;
             case "Trade Agreement":
-                if (tribes.size() >= 2) {
-                    Tribe tribe1 = tribes.get(random.nextInt(tribes.size()));
-                    Tribe tribe2 = tribes.get(random.nextInt(tribes.size()));
-                    if (tribe1 != tribe2) {
-                        VisualGUI.getInstance(null).addEvent("Trade agreement formed between " + tribe1.getName() + " and " + tribe2.getName(), VisualGUI.EventType.POLITICAL);
-                        world.getSectors().stream()
-                                .flatMap(sector -> sector.getDigimons().stream())
-                                .forEach(digimon -> {
-                                    if (digimon.getTribe() == tribe1) {
-                                        digimon.setHunger(digimon.getHunger() - 20);
-                                    } else if (digimon.getTribe() == tribe2) {
-                                        digimon.setHunger(digimon.getHunger() + 20);
-                                    }
-                                });
-                    }
-                }
+                handleTradeAgreement(world);
                 break;
             case "Cultural Exchange":
-                if (tribes.size() >= 2) {
-                    Tribe tribe1 = tribes.get(random.nextInt(tribes.size()));
-                    Tribe tribe2 = tribes.get(random.nextInt(tribes.size()));
-                    if (tribe1 != tribe2) {
-                        VisualGUI.getInstance(null).addEvent("Cultural exchange initiated between " + tribe1.getName() + " and " + tribe2.getName(), VisualGUI.EventType.POLITICAL);
-                        // Implement cultural exchange effects
-                    }
-                }
+                handleCulturalExchange(world);
                 break;
             case "Diplomatic Mission":
-                if (!tribes.isEmpty()) {
-                    Tribe tribe = tribes.get(random.nextInt(tribes.size()));
-                    VisualGUI.getInstance(null).addEvent(tribe.getName() + " has sent out a diplomatic mission", VisualGUI.EventType.POLITICAL);
-                    // Implement diplomatic mission effects
-                    tribes.parallelStream()
-                            .flatMap(sTribe -> sTribe.getMembers().parallelStream())
-                            .forEach(digimon -> {
-                                if (digimon.getTribe() == null) {
-                                    digimon.setAggression(digimon.getAggression() - 20);
-                                }
-                            });
-                }
+                handleDiplomaticMission(world);
                 break;
             case "Espionage":
-                if (tribes.size() >= 2) {
-                    Tribe spyingTribe = tribes.get(random.nextInt(tribes.size()));
-                    Tribe targetTribe = tribes.get(random.nextInt(tribes.size()));
-                    if (spyingTribe != targetTribe) {
-                        VisualGUI.getInstance(null).addEvent(spyingTribe.getName() + " is spying on " + targetTribe.getName(), VisualGUI.EventType.POLITICAL);
-                        // Implement espionage effects
-
-                    }
-                }
+                handleEspionage(world);
                 break;
             case "Convert Digimon":
-                if (!tribes.isEmpty()) {
-                    Tribe convertingTribe = tribes.get(random.nextInt(tribes.size()));
-                    List<Digimon> unaffiliatedDigimon = tribes.parallelStream()
-                            .flatMap(tribe -> tribe.getMembers().parallelStream())
-                            .filter(digimon -> digimon.getTribe() == null)
-                            .toList();
-
-                    if (!unaffiliatedDigimon.isEmpty()) {
-                        Digimon convertedDigimon = unaffiliatedDigimon.get(random.nextInt(unaffiliatedDigimon.size()));
-                        convertingTribe.addMember(convertedDigimon);
-                        Politics.convertDigimon(convertedDigimon, convertingTribe);
-                        VisualGUI.getInstance(null).addEvent(convertedDigimon.getName() + " has been converted to " + convertingTribe.getName(), VisualGUI.EventType.POLITICAL);
-
-                        // Increase loyalty and decrease aggression of the converted Digimon
-                        convertedDigimon.setAggression(Math.max(0, convertedDigimon.getAggression() - 25));
-                    }
-                }
+                handleConvertDigimon(world);
                 break;
-
             case "Make Peace":
-                if (tribes.size() >= 2) {
-                    Tribe tribe1 = tribes.get(random.nextInt(tribes.size()));
-                    Tribe tribe2 = tribes.get(random.nextInt(tribes.size()));
-
-                    VisualGUI.getInstance(null).addEvent(tribe1.getName() + " and " + tribe2.getName() + " have made peace", VisualGUI.EventType.POLITICAL);
-
-                    // Decrease aggression and increase happiness for both tribes
-                    Stream.concat(tribe1.getMembers().stream(), tribe2.getMembers().stream())
-                            .forEach(digimon -> {
-                                digimon.setAggression(Math.max(0, digimon.getAggression() - 50));
-                            });
-                }
+                handleMakePeace(world);
                 break;
+            case "Form New Tribe":
+                Tribe.formNewTribe(world);
+                break;
+            case "Build City":
+                handleBuildCity(world);
+                break;
+            // Add other cases as needed
         }
     }
 
-    /**
-     * Handles the effects of natural events on the Digimon population.
-     * This method applies the consequences of various natural disasters or phenomena
-     * to each Digimon in the provided list. Currently, it handles two types of events:
-     * "Food Shortage" and "Plague".
-     *
-     * @param world Current state of the Digimon World.
-     * @param event A String representing the type of natural event occurring. 
-     *              Valid values are "Food Shortage" and "Plague".
-     *              For "Food Shortage", Digimon's aggression and hunger increase.
-     *              For "Plague", Digimon's hunger and aggression increase, while health decreases.
-     */
-    private static void handleNaturalEvent(World world, String event) {
+    private static void handleNaturalEvent(World world) {
+        String naturalEvent = NATURAL_EVENTS[random.nextInt(NATURAL_EVENTS.length)];
+        VisualGUI.getInstance(null).addEvent("Natural Event: " + naturalEvent, VisualGUI.EventType.OTHER);
+
         world.getSectors().stream()
-                .flatMap(sector -> sector.getDigimons().stream())
-                .forEach(digimon -> {
-                    if (event.equals("Food Shortage")) {
-                        digimon.setAggression(digimon.getAggression() + 25);
-                        digimon.setHunger(digimon.getHunger() + 30);
-                        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a food shortage", VisualGUI.EventType.OTHER);
-                    } else if (event.equals("Plague")) {
-                        digimon.setHunger(digimon.getHunger() + 10);
-                        digimon.setAggression(digimon.getAggression() + 10);
-                        digimon.setHealth(digimon.getHealth() - 20);
-                        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a plague", VisualGUI.EventType.OTHER);
-                    } else if (event.equals("Storm")) {
-                        digimon.setHealth(digimon.getHealth() - 15);
-                        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a storm", VisualGUI.EventType.OTHER);
-                    } else if (event.equals("Earthquake")) {
-                        digimon.setHealth(digimon.getHealth() - 25);
-                        digimon.setAggression(digimon.getAggression() + 15);
-                        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by an earthquake", VisualGUI.EventType.OTHER);
-                    }
-                });
+            .flatMap(sector -> sector.getDigimons().stream())
+            .forEach(digimon -> applyNaturalEventEffect(digimon, naturalEvent));
     }
+
+    private static void handleHealingEvent(World world) {
+        VisualGUI.getInstance(null).addEvent("Healing Event: A mysterious force heals all Digimon!", VisualGUI.EventType.OTHER);
+        world.getSectors().stream()
+            .flatMap(sector -> sector.getDigimons().stream())
+            .forEach(digimon -> digimon.setHealth(100));
+    }
+
+    private static void handleAllianceFormed(World world) {
+        List<Tribe> tribes = world.getTribes();
+        if (tribes.size() >= 2) {
+            Tribe tribeA = getRandomTribe(tribes);
+            Tribe tribeB = getRandomTribe(tribes);
+            if (tribeA != tribeB) {
+                Politics.formAlliance(tribeA, tribeB);
+                applyAllianceEffects(world, tribeA, tribeB);
+            }
+        }
+    }
+
+    private static void handleWarDeclared(World world) {
+        List<Tribe> tribes = world.getTribes();
+        if (tribes.size() >= 2) {
+            Tribe tribeA = getRandomTribe(tribes);
+            Tribe tribeB = getRandomTribe(tribes);
+            if (tribeA != tribeB) {
+                Politics.declareWar(tribeA, tribeB);
+                applyWarEffects(world, tribeA, tribeB);
+            }
+        }
+    }
+
+    private static void handleTradeAgreement(World world) {
+        List<Tribe> tribes = world.getTribes();
+        if (tribes.size() >= 2) {
+            Tribe tribe1 = getRandomTribe(tribes);
+            Tribe tribe2 = getRandomTribe(tribes);
+            if (tribe1 != tribe2) {
+                VisualGUI.getInstance(null).addEvent("Trade agreement formed between " + tribe1.getName() + " and " + tribe2.getName(), VisualGUI.EventType.POLITICAL);
+                applyTradeAgreementEffects(world, tribe1, tribe2);
+            }
+        }
+    }
+
+    private static void handleCulturalExchange(World world) {
+        List<Tribe> tribes = world.getTribes();
+        if (tribes.size() >= 2) {
+            Tribe tribe1 = getRandomTribe(tribes);
+            Tribe tribe2 = getRandomTribe(tribes);
+            if (tribe1 != tribe2) {
+                VisualGUI.getInstance(null).addEvent("Cultural exchange initiated between " + tribe1.getName() + " and " + tribe2.getName(), VisualGUI.EventType.POLITICAL);
+                // Implement cultural exchange effects
+            }
+        }
+    }
+
+    private static void handleDiplomaticMission(World world) {
+        List<Tribe> tribes = world.getTribes();
+        if (!tribes.isEmpty()) {
+            Tribe tribe = getRandomTribe(tribes);
+            VisualGUI.getInstance(null).addEvent(tribe.getName() + " has sent out a diplomatic mission", VisualGUI.EventType.POLITICAL);
+            applyDiplomaticMissionEffects(world);
+        }
+    }
+
+    private static void handleEspionage(World world) {
+        List<Tribe> tribes = world.getTribes();
+        if (tribes.size() >= 2) {
+            Tribe spyingTribe = getRandomTribe(tribes);
+            Tribe targetTribe = getRandomTribe(tribes);
+            if (spyingTribe != targetTribe) {
+                VisualGUI.getInstance(null).addEvent(spyingTribe.getName() + " is spying on " + targetTribe.getName(), VisualGUI.EventType.POLITICAL);
+                // Implement espionage effects
+            }
+        }
+    }
+
+    private static void handleConvertDigimon(World world) {
+        List<Tribe> tribes = world.getTribes();
+        if (!tribes.isEmpty()) {
+            Tribe convertingTribe = getRandomTribe(tribes);
+            List<Digimon> unaffiliatedDigimon = getUnaffiliatedDigimon(tribes);
+            if (!unaffiliatedDigimon.isEmpty()) {
+                Digimon convertedDigimon = getRandomDigimon(unaffiliatedDigimon);
+                convertDigimon(convertedDigimon, convertingTribe);
+            }
+        }
+    }
+
+    private static void handleMakePeace(World world) {
+        List<Tribe> tribes = world.getTribes();
+        if (tribes.size() >= 2) {
+            Tribe tribe1 = getRandomTribe(tribes);
+            Tribe tribe2 = getRandomTribe(tribes);
+            VisualGUI.getInstance(null).addEvent(tribe1.getName() + " and " + tribe2.getName() + " have made peace", VisualGUI.EventType.POLITICAL);
+            applyPeaceEffects(tribe1, tribe2);
+        }
+    }
+
+    private static void handleBuildCity(World world) {
+        List<Tribe> tribes = world.getTribes();
+        if (!tribes.isEmpty()) {
+            Tribe.buildCity(getRandomTribe(tribes));
+            VisualGUI.getInstance(null).addEvent("A new city has been built", VisualGUI.EventType.POLITICAL);
+        } else {
+            VisualGUI.getInstance(null).addEvent("Can't build a city without a tribe", VisualGUI.EventType.POLITICAL);
+        }
+    }
+
+    private static void applyNaturalEventEffect(Digimon digimon, String event) {
+        switch (event) {
+            case "Food Shortage":
+                digimon.setAggression(digimon.getAggression() + 25);
+                digimon.setHunger(digimon.getHunger() + 30);
+                break;
+            case "Plague":
+                digimon.setHunger(digimon.getHunger() + 10);
+                digimon.setAggression(digimon.getAggression() + 10);
+                digimon.setHealth(digimon.getHealth() - 20);
+                break;
+            case "Storm":
+                digimon.setHealth(digimon.getHealth() - 15);
+                break;
+            case "Earthquake":
+                digimon.setHealth(digimon.getHealth() - 25);
+                digimon.setAggression(digimon.getAggression() + 15);
+                break;
+        }
+        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by " + event, VisualGUI.EventType.OTHER);
+    }
+
+    private static Tribe getRandomTribe(List<Tribe> tribes) {
+        return tribes.get(random.nextInt(tribes.size()));
+    }
+
+    private static Digimon getRandomDigimon(List<Digimon> digimons) {
+        return digimons.get(random.nextInt(digimons.size()));
+    }
+
+    private static List<Digimon> getUnaffiliatedDigimon(List<Tribe> tribes) {
+        return tribes.parallelStream()
+            .flatMap(tribe -> tribe.getMembers().parallelStream())
+            .filter(digimon -> digimon.getTribe() == null)
+            .toList();
+    }
+
+    private static void applyAllianceEffects(World world, Tribe tribeA, Tribe tribeB) {
+        world.getSectors().stream()
+            .flatMap(sector -> sector.getDigimons().stream())
+            .forEach(digimon -> {
+                if (digimon.getTribe() == tribeA || digimon.getTribe() == tribeB) {
+                    digimon.setAggression(digimon.getAggression() + 100);
+                } else if (digimon.getTribe() != null) {
+                    digimon.setAggression(digimon.getAggression() + 50);
+                } else {
+                    digimon.setAggression(digimon.getAggression() + 26);
+                }
+            });
+    }
+
+    private static void applyWarEffects(World world, Tribe tribeA, Tribe tribeB) {
+        applyAllianceEffects(world, tribeA, tribeB); // War effects are currently the same as alliance effects
+    }
+
+    private static void applyTradeAgreementEffects(World world, Tribe tribe1, Tribe tribe2) {
+        world.getSectors().stream()
+            .flatMap(sector -> sector.getDigimons().stream())
+            .forEach(digimon -> {
+                if (digimon.getTribe() == tribe1) {
+                    digimon.setHunger(digimon.getHunger() - 20);
+                } else if (digimon.getTribe() == tribe2) {
+                    digimon.setHunger(digimon.getHunger() + 20);
+                }
+            });
+    }
+    private static void applyDiplomaticMissionEffects(World world) {
+        world.getTribes().parallelStream()
+            .flatMap(tribe -> tribe.getMembers().parallelStream())
+            .forEach(digimon -> {
+                if (digimon.getTribe() == null) {
+                    digimon.setAggression(digimon.getAggression() - 20);
+                }
+            });
+    }
+
+    private static void convertDigimon(Digimon convertedDigimon, Tribe convertingTribe) {
+        convertingTribe.addMember(convertedDigimon);
+        Politics.convertDigimon(convertedDigimon, convertingTribe);
+        VisualGUI.getInstance(null).addEvent(convertedDigimon.getName() + " has been converted to " + convertingTribe.getName(), VisualGUI.EventType.POLITICAL);
+
+        // Increase loyalty and decrease aggression of the converted Digimon
+        convertedDigimon.setAggression(Math.max(0, convertedDigimon.getAggression() - 25));
+    }
+
+    private static void applyPeaceEffects(Tribe tribe1, Tribe tribe2) {
+        Stream.concat(tribe1.getMembers().stream(), tribe2.getMembers().stream())
+            .forEach(digimon -> {
+                digimon.setAggression(Math.max(0, digimon.getAggression() - 50));
+            });
+    }
+
+
 }

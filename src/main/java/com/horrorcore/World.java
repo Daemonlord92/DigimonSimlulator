@@ -28,6 +28,7 @@ public class World {
     private final ReadWriteLock worldLock = new ReentrantReadWriteLock();
     private final AtomicBoolean running = new AtomicBoolean(true);
     private final List<Integer> agesRequired = List.of(500, 1000, 1500, 2000);
+    private volatile long lastUpdateTime = 0;
 
 
     /**
@@ -197,83 +198,107 @@ public class World {
      * This method does not take any parameters and does not return any value as it runs indefinitely.
      */
     public void simulate(VisualGUI gui) {
-        System.out.println("Simulation started with GUI: " + gui);
-        while (running.get()) {
-            boolean lockAcquired = false;
-            try {
-                lockAcquired = worldLock.writeLock().tryLock(5, TimeUnit.SECONDS);
-                if (!lockAcquired) {
-                    LOGGER.warning("Failed to acquire write lock within 5 seconds. Skipping this simulation step.");
-                    continue;
+            System.out.println("Simulation started with GUI: " + gui);
+            Thread watchdog = new Thread(() -> {
+                while (running.get()) {
+                    try {
+                        Thread.sleep(10000); // Check every 10 seconds
+                        if (System.currentTimeMillis() - lastUpdateTime > 15000) {
+                            LOGGER.warning("Simulation seems to be frozen. Last update was more than 15 seconds ago.");
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
-                StringBuilder output = new StringBuilder();
-                output.append("\n--- Time: ").append(time).append(" ---\n");
-                output.append("Current Age: ").append(technologySystem.getCurrentAge()).append("\n");
+            });
+            watchdog.setDaemon(true);
+            watchdog.start();
+            while (running.get()) {
+                lastUpdateTime = System.currentTimeMillis();
+                boolean lockAcquired = false;
+                try {
+                    lockAcquired = worldLock.writeLock().tryLock(5, TimeUnit.SECONDS);
+                    if (!lockAcquired) {
+                        LOGGER.warning("Failed to acquire write lock within 5 seconds. Skipping this simulation step.");
+                        continue;
+                    }
+                    StringBuilder output = new StringBuilder();
+                    output.append("\n--- Time: ").append(time).append(" ---\n");
+                    output.append("Current Age: ").append(technologySystem.getCurrentAge()).append("\n");
 
-                for (Sector sector : sectors) {
-                for (Digimon digimon : new ArrayList<>(sector.getDigimons())) {
-                    digimon.ageUp();
-                    EvolutionSystem.checkEvolution(digimon);
+                    for (Sector sector : sectors) {
+                    for (Digimon digimon : new ArrayList<>(sector.getDigimons())) {
+                        digimon.ageUp();
+                        EvolutionSystem.checkEvolution(digimon);
 
-                    if (digimon.getAggression() > 50) {
-                        Digimon target = findTarget(digimon, sector);
-                        if (target != null) {
-                            digimon.attack(target);
+                        if (digimon.getAggression() > 50) {
+                            Digimon target = findTarget(digimon, sector);
+                            if (target != null) {
+                                digimon.attack(target);
+                            }
+                        }
+
+                        if (digimon.getAge() <= 25 || digimon.getHealth() >= 15 && random.nextBoolean()) {
+                            Optional<Sector> targetSectorOptional = sector.getAdjacentSectors().parallelStream().findAny();
+                            if (targetSectorOptional.isPresent()) {
+                                sector.removeDigimon(digimon);
+                                Sector targetSector = targetSectorOptional.get();
+                                targetSector.addDigimon(digimon);
+                                VisualGUI.getInstance(null).addEvent(digimon.getName() + " has moved to sector " + targetSector.getName(), VisualGUI.EventType.OTHER);
+                            }
                         }
                     }
+                    INSTANCE.getTribes().forEach(tribe -> {
+                        tribe.getMembers().forEach(digimon -> {
+                            tribe.getTechnologySystem().assignProfession(digimon, tribe.getTechnologySystem().getProfessions().keySet().stream().findFirst().get());
+                        });
+                        tribe.getTechnologySystem().performWork(INSTANCE);
+                    });
 
-                    if (digimon.getAge() <= 25 || digimon.getHealth() >= 15 && random.nextBoolean()) {
-                        Optional<Sector> targetSectorOptional = sector.getAdjacentSectors().parallelStream().findAny();
-                        if (targetSectorOptional.isPresent()) {
-                            sector.removeDigimon(digimon);
-                            Sector targetSector = targetSectorOptional.get();
-                            targetSector.addDigimon(digimon);
-                            VisualGUI.getInstance(null).addEvent(digimon.getName() + " has moved to sector " + targetSector.getName(), VisualGUI.EventType.OTHER);
+                    List<Digimon> digimons = sector.getDigimons();
+                    RebirthSystem.checkRebirth(digimons);
+                    if (time % (random.nextInt(2) + 1) == 0 && digimons.size() < 10) {
+                        BirthSystem.randomBirth(digimons);
+                    }
+                    if (time % 5 == 0) {
+                        EventSystem.triggerRandomEvent(INSTANCE);
+                    }
+
+                    if (digimons.isEmpty()) {
+                        for (int i = 0; i < 5; i++) {
+                            Digimon newDigimon = DigimonGenerator.generateRandomDigimon();
+                            sector.addDigimon(newDigimon);
                         }
                     }
-                }
-                List<Digimon> digimons = sector.getDigimons();
-                RebirthSystem.checkRebirth(digimons);
-                if (time % (random.nextInt(2) + 1) == 0 && digimons.size() < 10) {
-                    BirthSystem.randomBirth(digimons);
-                }
-                if (time % 5 == 0) {
-                    EventSystem.triggerRandomEvent(INSTANCE);
+                    if(random.nextBoolean()) {
+                        FoodSystem.distributeFood(digimons);
+                    }
+
                 }
 
-                if (digimons.isEmpty()) {
-                    for (int i = 0; i < 5; i++) {
-                        Digimon newDigimon = DigimonGenerator.generateRandomDigimon();
-                        sector.addDigimon(newDigimon);
-                    }
-                }
+
                 if(random.nextBoolean()) {
-                    FoodSystem.distributeFood(digimons);
+                    LOGGER.info("Triggering Political Situation");
+                    Politics.updatePoliticalSituation();
+                }
+                // Update political relationships
+
+                int currentAgeIndex = Arrays.asList(TechnologySystem.AGES).indexOf(technologySystem.getCurrentAge());
+                // Advance technological age
+                if (time == agesRequired.get(currentAgeIndex)) {
+                    technologySystem.advanceAge();
                 }
 
-            }
-
-            if(random.nextBoolean()) {
-                LOGGER.info("Triggering Political Situation");
-                Politics.updatePoliticalSituation();
-            }
-            // Update political relationships
-
-            int currentAgeIndex = Arrays.asList(TechnologySystem.AGES).indexOf(technologySystem.getCurrentAge());
-            // Advance technological age
-            if (time == agesRequired.get(currentAgeIndex)) {
-                technologySystem.advanceAge();
-            }
-
-            // Replace console output with GUI updates
-            for (Sector sector : sectors) {
-                output.append("\nSector: ").append(sector.getName()).append("\n");
-                for (Digimon digimon : sector.getDigimons()) {
-                    output.append(digimon.getStatusString()).append("\n");
+                // Replace console output with GUI updates
+                for (Sector sector : sectors) {
+                    output.append("\nSector: ").append(sector.getName()).append("\n");
+                    for (Digimon digimon : sector.getDigimons()) {
+                        output.append(digimon.getStatusString()).append("\n");
+                    }
                 }
-            }
 
-                int totalDigimon = sectors.parallelStream().mapToInt(sector -> sector.getDigimons().size()).sum();
+                int totalDigimon = sectors.stream().mapToInt(sector -> sector.getDigimons().size()).sum();
                 double deathProbability = 0.05; // 5% chance of death per Digimon per time step
                 int expectedDeaths = (int) Math.round(totalDigimon * deathProbability);
                 int actualDeaths = random.nextInt(expectedDeaths * 2 + 1); // Allow for some variability
@@ -282,9 +307,10 @@ public class World {
                     simulateRandomDeath();
                 }
 
-            gui.updateDisplay(); // Use the passed GUI instance
+                gui.updateDisplay(); // Use the passed GUI instance
 
                 time++;
+                System.gc();
             } catch (InterruptedException e) {
                 LOGGER.log(Level.WARNING, "Simulation interrupted", e);
                 Thread.currentThread().interrupt();
@@ -312,25 +338,54 @@ public class World {
  * This method has a small chance of removing a random Digimon from the world.
  */
 private void simulateRandomDeath() {
-    if (random.nextInt(100) < 5) { // 5% chance of death occurring
-        List<Digimon> allDigimon = new ArrayList<>();
-        for (Sector sector : sectors) {
-            allDigimon.addAll(sector.getDigimons());
-        }
-        
-        if (!allDigimon.isEmpty()) {
-            Digimon unfortunateDigimon = allDigimon.get(random.nextInt(allDigimon.size()));
-            Sector digimonSector = sectors.parallelStream()
-                .filter(sector -> sector.getDigimons().contains(unfortunateDigimon))
-                .findFirst()
-                .orElse(null);
-            
-            if (digimonSector != null) {
-                digimonSector.removeDigimon(unfortunateDigimon);
-                LOGGER.info(unfortunateDigimon.getName() + " has died in " + digimonSector.getName());
-                VisualGUI.getInstance(null).addEvent(unfortunateDigimon.getName() + " has died in " + digimonSector.getName(), VisualGUI.EventType.OTHER);
+    List<Digimon> allDigimon = new ArrayList<>();
+    for (Sector sector : sectors) {
+        allDigimon.addAll(sector.getDigimons());
+    }
+    
+    if (!allDigimon.isEmpty()) {
+        for (Digimon digimon : allDigimon) {
+            if (shouldDigimonDie(digimon)) {
+                Sector digimonSector = sectors.stream()
+                    .filter(sector -> sector.getDigimons().contains(digimon))
+                    .findFirst()
+                    .orElse(null);
+                
+                if (digimonSector != null) {
+                    digimonSector.removeDigimon(digimon);
+                    LOGGER.info(digimon.getName() + " has died in " + digimonSector.getName());
+                    VisualGUI.getInstance(null).addEvent(digimon.getName() + " has died in " + digimonSector.getName(), VisualGUI.EventType.OTHER);
+                }
             }
         }
+    }
+}
+
+private boolean shouldDigimonDie(Digimon digimon) {
+    int baseDeathChance = 5; // 5% base chance of death
+    int healthFactor = Math.max(0, 100 - digimon.getHealth()); // Lower health increases death chance
+    int evolutionStageFactor = getEvolutionStageFactor(digimon);
+    
+    int totalDeathChance = baseDeathChance + (healthFactor / 2) - evolutionStageFactor;
+    totalDeathChance = Math.max(1, Math.min(totalDeathChance, 95)); // Ensure chance is between 1% and 95%
+    
+    return random.nextInt(100) < totalDeathChance;
+}
+
+private int getEvolutionStageFactor(Digimon digimon) {
+    switch (digimon.getStage()) {
+        case "Fresh", "Baby":
+            return -5; // More vulnerable
+        case "Rookie":
+            return 5;
+        case "Champion":
+            return 10;
+        case "Ultimate":
+            return 15;
+        case "Mega":
+            return 20; // More resilient
+        default:
+            return 0;
     }
 }
 

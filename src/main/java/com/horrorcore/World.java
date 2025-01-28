@@ -310,6 +310,7 @@ public class World {
                 gui.updateDisplay(); // Use the passed GUI instance
 
                 time++;
+                INSTANCE.getTribes().stream().filter(tribe -> tribe.getMembers().isEmpty()).forEach(tribe -> Tribe.getAllTribes().remove(tribe));
                 System.gc();
             } catch (InterruptedException e) {
                 LOGGER.log(Level.WARNING, "Simulation interrupted", e);

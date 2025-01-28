@@ -106,7 +106,6 @@ public class Digimon {
         VisualGUI.getInstance(null).addEvent(this.name + " has evolved to " + this.stage + " stage!", VisualGUI.EventType.OTHER);
     }
 
-    // Friendship methods
 
     public void increaseFriendship(Digimon tribeMember, int friendshipPoints) {
         this.friendship += friendshipPoints;

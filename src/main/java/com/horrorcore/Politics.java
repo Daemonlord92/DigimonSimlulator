@@ -150,7 +150,7 @@ public class Politics {
     }
 
     private static void updateWarSituations() {
-        wars.forEach((attacker, defenders) -> 
+        wars.forEach((attacker, defenders) ->
             defenders.parallelStream().forEach(defender -> {
                 if (Math.random() < 0.1) {
                     battle(attacker, defender);
@@ -162,37 +162,44 @@ public class Politics {
     // Battle methods
     private static void battle(Tribe attacker, Tribe defender) {
         World world = World.getInstance();
-        Map<Sector, List<Digimon>> attackerForces = organizeForces(world, attacker);
-        Map<Sector, List<Digimon>> defenderForces = organizeForces(world, defender);
+        Map<Sector, List<Digimon>> attackerForces = new HashMap<>();
+        Map<Sector, List<Digimon>> defenderForces = new HashMap<>();
 
-        world.getSectors().forEach(sector -> 
-            battleInSector(sector, attackerForces.get(sector), defenderForces.get(sector), attacker, defender)
-        );
-    }
+        // Organize forces by sector
+        for (Sector sector : world.getSectors()) {
+            List<Digimon> attackersInSector = sector.getDigimons().stream()
+                    .filter(d -> d.getTribe().equals(attacker.getName()))
+                    .collect(Collectors.toList());
+            List<Digimon> defendersInSector = sector.getDigimons().stream()
+                    .filter(d -> d.getTribe().equals(defender.getName()))
+                    .collect(Collectors.toList());
 
-    private static Map<Sector, List<Digimon>> organizeForces(World world, Tribe tribe) {
-        return world.getSectors().stream()
-            .collect(Collectors.toMap(
-                sector -> sector,
-                sector -> sector.getDigimons().stream()
-                    .filter(d -> d.getTribe().equals(tribe.getName()))
-                    .collect(Collectors.toList()),
-                (v1, v2) -> v1,
-                HashMap::new
-            ));
-    }
+            if (!attackersInSector.isEmpty()) {
+                attackerForces.put(sector, attackersInSector);
+            }
+            if (!defendersInSector.isEmpty()) {
+                defenderForces.put(sector, defendersInSector);
+            }
+        }
 
-    private static void battleInSector(Sector sector, List<Digimon> attackers, List<Digimon> defenders, Tribe attacker, Tribe defender) {
-        if (attackers != null && !attackers.isEmpty() && defenders != null && !defenders.isEmpty()) {
-            int attackStrength = calculateForceStrength(attackers);
-            int defenseStrength = calculateForceStrength(defenders);
+        // Battle in each sector
+        for (Sector sector : world.getSectors()) {
+            List<Digimon> sectorAttackers = attackerForces.getOrDefault(sector, new ArrayList<>());
+            List<Digimon> sectorDefenders = defenderForces.getOrDefault(sector, new ArrayList<>());
 
-            if (attackStrength > defenseStrength) {
-                applyBattleDamage(defenders, 20);
-                announceBattleResult(attacker, defender, sector, true);
-            } else {
-                applyBattleDamage(attackers, 20);
-                announceBattleResult(attacker, defender, sector, false);
+            if (!sectorAttackers.isEmpty() && !sectorDefenders.isEmpty()) {
+                int attackStrength = calculateForceStrength(sectorAttackers);
+                int defenseStrength = calculateForceStrength(sectorDefenders);
+
+                if (attackStrength > defenseStrength) {
+                    // Attackers win in this sector
+                    applyBattleDamage(sectorDefenders, 20);
+                    VisualGUI.getInstance(null).addEvent(attacker.getName() + " won a battle against " + defender.getName() + " in " + sector.getName() + "!", VisualGUI.EventType.POLITICAL);
+                } else {
+                    // Defenders win in this sector
+                    applyBattleDamage(sectorAttackers, 20);
+                    VisualGUI.getInstance(null).addEvent(defender.getName() + " successfully defended against " + attacker.getName() + " in " + sector.getName() + "!", VisualGUI.EventType.POLITICAL);
+                }
             }
         }
     }
@@ -211,12 +218,5 @@ public class Politics {
                 VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been defeated in battle!", VisualGUI.EventType.POLITICAL);
             }
         });
-    }
-
-    private static void announceBattleResult(Tribe attacker, Tribe defender, Sector sector, boolean attackerWon) {
-        String message = attackerWon
-            ? attacker.getName() + " won a battle against " + defender.getName() + " in " + sector.getName() + "!"
-            : defender.getName() + " successfully defended against " + attacker.getName() + " in " + sector.getName() + "!";
-        VisualGUI.getInstance(null).addEvent(message, VisualGUI.EventType.POLITICAL);
     }
 }

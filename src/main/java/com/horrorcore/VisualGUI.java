@@ -25,6 +25,7 @@ public class VisualGUI {
     private JTextArea outputArea;
     private JTextArea attackEventArea;
     private JTextArea politicalEventArea;
+    private JTextArea tribeInfoArea;
     private JTextArea otherEventArea;
     private ScheduledExecutorService executor;
     private final ReadWriteLock worldLock = new ReentrantReadWriteLock();
@@ -135,6 +136,18 @@ public class VisualGUI {
             gbc.gridy = 2;
             gbc.weighty = 0.2;
             frame.add(eventsPanel, gbc);
+
+            // Create tribe info panel
+            tribeInfoArea = new JTextArea(10, 50);
+            tribeInfoArea.setEditable(false);
+            JScrollPane tribeInfoScrollPane = new JScrollPane(tribeInfoArea);
+            tribeInfoScrollPane.setBorder(BorderFactory.createTitledBorder("Tribe Information"));
+
+            gbc.gridx = 0;
+            gbc.gridy = 3;
+            gbc.gridwidth = 3;
+            gbc.weighty = 0.2;
+            frame.add(tribeInfoScrollPane, gbc);
     
             frame.setVisible(true);
     
@@ -219,6 +232,25 @@ public class VisualGUI {
                             totalBuildings
                     ));
                 }
+
+                // Update tribe information
+                StringBuilder tribeInfo = new StringBuilder();
+                tribeInfo.append("Tribes:\n");
+                for (Tribe tribe : Tribe.getAllTribes()) {
+                    tribeInfo.append(String.format("- %s (Leader: %s)\n", 
+                        tribe.getName(), 
+                        tribe.getLeader() != null ? tribe.getLeader().getName() : "None"));
+                    tribeInfo.append("  Members:\n");
+                    for (Digimon member : tribe.getMembers()) {
+                        tribeInfo.append(String.format("    %s (%s)\n", 
+                            member.getName(), 
+                            member.getStage()));
+                    }
+                    tribeInfo.append("  Territory: ").append(tribe.getTechnologySystem().getTechnologyLevels()).append("\n");
+                    tribeInfo.append("  Military: ").append(tribe.getMilitaryStrength()).append("\n");
+                    tribeInfo.append("\n");
+                }
+                tribeInfoArea.setText(tribeInfo.toString());
             } finally {
                 worldLock.readLock().unlock();
             }

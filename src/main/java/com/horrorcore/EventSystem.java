@@ -12,7 +12,7 @@ public class EventSystem {
         "Diplomatic Mission", "Espionage", "Form New Tribe", "Build City"
     };
     private static final String[] NATURAL_EVENTS = {
-        "Food Shortage", "Plague", "Storm", "Earthquake"
+        "Food Shortage", "Plague", "Storm", "Earthquake", "Mass Birth"
     };
 
     public static Random random = new Random();
@@ -215,26 +215,40 @@ public class EventSystem {
      *              For "Plague", Digimon's hunger and aggression increase, while health decreases.
      */
     private static void handleNaturalEvent(World world, String event) {
-        world.getSectors().stream()
+        List<Digimon> allDigimon = world.getSectors().stream()
                 .flatMap(sector -> sector.getDigimons().stream())
-                .forEach(digimon -> {
-                    if (event.equals("Food Shortage")) {
-                        digimon.setAggression(digimon.getAggression() + 25);
-                        digimon.setHunger(digimon.getHunger() + 30);
-                        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a food shortage", VisualGUI.EventType.OTHER);
-                    } else if (event.equals("Plague")) {
-                        digimon.setHunger(digimon.getHunger() + 10);
-                        digimon.setAggression(digimon.getAggression() + 10);
-                        digimon.setHealth(digimon.getHealth() - 20);
-                        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a plague", VisualGUI.EventType.OTHER);
-                    } else if (event.equals("Storm")) {
-                        digimon.setHealth(digimon.getHealth() - 15);
-                        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a storm", VisualGUI.EventType.OTHER);
-                    } else if (event.equals("Earthquake")) {
-                        digimon.setHealth(digimon.getHealth() - 25);
-                        digimon.setAggression(digimon.getAggression() + 15);
-                        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by an earthquake", VisualGUI.EventType.OTHER);
+                .collect(Collectors.toList());
+    
+        for (Digimon digimon : allDigimon) {
+            switch (event) {
+                case "Food Shortage":
+                    digimon.setAggression(digimon.getAggression() + 25);
+                    digimon.setHunger(digimon.getHunger() + 30);
+                    VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a food shortage", VisualGUI.EventType.OTHER);
+                    break;
+                case "Plague":
+                    digimon.setHunger(digimon.getHunger() + 10);
+                    digimon.setAggression(digimon.getAggression() + 10);
+                    digimon.setHealth(digimon.getHealth() - 20);
+                    VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a plague", VisualGUI.EventType.OTHER);
+                    break;
+                case "Storm":
+                    digimon.setHealth(digimon.getHealth() - 15);
+                    VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a storm", VisualGUI.EventType.OTHER);
+                    break;
+                case "Earthquake":
+                    digimon.setHealth(digimon.getHealth() - 25);
+                    digimon.setAggression(digimon.getAggression() + 15);
+                    VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by an earthquake", VisualGUI.EventType.OTHER);
+                    break;
+                case "Mass Birth":
+                    for (int i = 0; i < random.nextInt(100); i++) {
+                        world.getSectors().stream().findAny().orElse(world.getSectors().get(random.nextInt(world.getSectors().size())))
+                                .getDigimons().add(DigimonGenerator.generateRandomDigimon());
                     }
-                });
+                    VisualGUI.getInstance(null).addEvent("A mass birth event has occurred!", VisualGUI.EventType.OTHER);
+                    return; // This will exit the method immediately after handling Mass Birth
+            }
+        }
     }
 }

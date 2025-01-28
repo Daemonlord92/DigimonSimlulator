@@ -23,6 +23,13 @@ public class TechnologySystem {
         professions.put("Scientist", new ArrayList<>());
     }
 
+    public TechnologySystem(TechnologySystem technologySystem) {
+        this.technologyLevels = new HashMap<>(technologySystem.technologyLevels);
+        this.professions = new HashMap<>(technologySystem.professions);
+        this.currentAgeIndex = technologySystem.currentAgeIndex;
+        this.researchPoints = technologySystem.researchPoints;
+    }
+
     public void advanceAge() {
         if (currentAgeIndex < AGES.length - 1) {
             currentAgeIndex++;

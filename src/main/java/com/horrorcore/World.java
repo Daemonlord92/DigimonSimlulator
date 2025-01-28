@@ -29,7 +29,7 @@ public class World {
     private final AtomicBoolean running = new AtomicBoolean(true);
     private final List<Integer> agesRequired = List.of(500, 1000, 1500, 2000);
     private volatile long lastUpdateTime = 0;
-
+    private WorldState savedState;
 
     /**
      * Constructs a new World object, initializing all its components.
@@ -249,6 +249,9 @@ public class World {
                             }
                         }
                     }
+                    for (int i = 0; i < 5; i++) {
+                        DigimonGenerator.generateRandomDigimon();
+                    }
                     INSTANCE.getTribes().forEach(tribe -> {
                         tribe.getMembers().forEach(digimon -> {
                             tribe.getTechnologySystem().assignProfession(digimon, tribe.getTechnologySystem().getProfessions().keySet().stream().findFirst().get());
@@ -363,30 +366,46 @@ private void simulateRandomDeath() {
 }
 
 private boolean shouldDigimonDie(Digimon digimon) {
-    int baseDeathChance = 5; // 5% base chance of death
-    int healthFactor = Math.max(0, 100 - digimon.getHealth()); // Lower health increases death chance
+    int baseDeathChance = 1; // Reduced from 5% to 1% base chance of death
+    int healthFactor = Math.max(0, 100 - digimon.getHealth()) / 4; // Reduced impact of health
     int evolutionStageFactor = getEvolutionStageFactor(digimon);
+    Optional<Tribe> tribe = Optional.ofNullable(digimon.getTribe());
     
-    int totalDeathChance = baseDeathChance + (healthFactor / 2) - evolutionStageFactor;
-    totalDeathChance = Math.max(1, Math.min(totalDeathChance, 95)); // Ensure chance is between 1% and 95%
+    int totalDeathChance = baseDeathChance + healthFactor - evolutionStageFactor;
     
-    return random.nextInt(100) < totalDeathChance;
+    // Apply tribe bonus if the Digimon belongs to a tribe
+    if (tribe.isPresent()) {
+        totalDeathChance -= 1; // Tribe members are slightly more resilient
+    }
+    
+    // Apply age factor
+    if (digimon.getAge() < 10) {
+        totalDeathChance += 1; // Very young Digimon are slightly more vulnerable
+    } else if (digimon.getAge() > 50) {
+        totalDeathChance += 2; // Old Digimon are more vulnerable
+    }
+    
+    totalDeathChance = Math.max(0, Math.min(totalDeathChance, 50)); // Ensure chance is between 0% and 50%
+    
+    return random.nextInt(1000) < totalDeathChance * 10; // This gives more granularity
 }
 
 private int getEvolutionStageFactor(Digimon digimon) {
     switch (digimon.getStage()) {
-        case "Fresh", "Baby":
-            return -5; // More vulnerable
+        case "Fresh":
+            return 0; // Most vulnerable
+        case "In-Training":
+            return 1;
         case "Rookie":
-            return 5;
+            return 2;
         case "Champion":
-            return 10;
+            return 3;
         case "Ultimate":
-            return 15;
+            return 4;
         case "Mega":
-            return 20; // More resilient
+            return 5; // Most resilient
         default:
-            return 0;
+            return 2; // Default to Rookie level resilience
     }
 }
 
@@ -481,5 +500,107 @@ private int getEvolutionStageFactor(Digimon digimon) {
 
     public List<Tribe> getTribes() {
         return tribes;
+    }
+    public void saveState() {
+        boolean lockAcquired = false;
+        try {
+            lockAcquired = worldLock.writeLock().tryLock(5, TimeUnit.SECONDS);
+            if (!lockAcquired) {
+                LOGGER.warning("Failed to acquire write lock within 5 seconds. Skipping saveState operation.");
+                return;
+            }
+            this.savedState = new WorldState(this);
+            LOGGER.info("World state saved successfully.");
+        } catch (InterruptedException e) {
+            LOGGER.log(Level.WARNING, "Interrupted while trying to acquire lock for saveState", e);
+            Thread.currentThread().interrupt();
+        } finally {
+            if (lockAcquired) {
+                worldLock.writeLock().unlock();
+            }
+        }
+    }
+
+    /**
+     * Resets the world to its initial state.
+     */
+    public void reset() {
+        boolean lockAcquired = false;
+        try {
+            lockAcquired = worldLock.writeLock().tryLock(5, TimeUnit.SECONDS);
+            if (!lockAcquired) {
+                LOGGER.warning("Failed to acquire write lock within 5 seconds. Skipping reset operation.");
+                return;
+            }
+            this.digimonList = new ArrayList<>();
+            this.tribes = Tribe.getAllTribes();
+            this.technologySystem = new TechnologySystem();
+            this.time = 0;
+            this.sectors = new ArrayList<>();
+            this.random = new Random();
+            initialize();
+            LOGGER.info("World reset to initial state.");
+        } catch (InterruptedException e) {
+            LOGGER.log(Level.WARNING, "Interrupted while trying to acquire lock for reset", e);
+            Thread.currentThread().interrupt();
+        } finally {
+            if (lockAcquired) {
+                worldLock.writeLock().unlock();
+            }
+        }
+    }
+
+    /**
+     * Loads a previously saved state of the world.
+     */
+    public void loadState() {
+        boolean lockAcquired = false;
+        try {
+            lockAcquired = worldLock.writeLock().tryLock(5, TimeUnit.SECONDS);
+            if (!lockAcquired) {
+                LOGGER.warning("Failed to acquire write lock within 5 seconds. Skipping loadState operation.");
+                return;
+            }
+            if (this.savedState == null) {
+                LOGGER.warning("No saved state available to load.");
+                return;
+            }
+            this.digimonList = new ArrayList<>(savedState.digimonList);
+            this.tribes = new ArrayList<>(savedState.tribes);
+            this.technologySystem = new TechnologySystem(savedState.technologySystem);
+            this.time = savedState.time;
+            this.sectors = new ArrayList<>(savedState.sectors);
+            LOGGER.info("World state loaded successfully.");
+        } catch (InterruptedException e) {
+            LOGGER.log(Level.WARNING, "Interrupted while trying to acquire lock for loadState", e);
+            Thread.currentThread().interrupt();
+        } finally {
+            if (lockAcquired) {
+                worldLock.writeLock().unlock();
+            }
+        }
+    }
+
+    public boolean isInitialized() {
+        if (digimonList == null || tribes == null || technologySystem == null || sectors == null) {
+            return false;
+        }
+        return true;
+    }
+
+    private class WorldState {
+        private List<Digimon> digimonList;
+        private List<Tribe> tribes;
+        private TechnologySystem technologySystem;
+        private int time;
+        private List<Sector> sectors;
+    
+        public WorldState(World world) {
+            this.digimonList = new ArrayList<>(world.digimonList);
+            this.tribes = new ArrayList<>(world.tribes);
+            this.technologySystem = new TechnologySystem(world.technologySystem);
+            this.time = world.time;
+            this.sectors = new ArrayList<>(world.sectors);
+        }
     }
 }

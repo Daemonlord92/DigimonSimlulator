@@ -12,6 +12,7 @@ public class Tribe {
     private final int id;
     private String name;
     private List<Digimon> members;
+    private Digimon leader;
     private int buildings;
     private final TechnologySystem technologySystem;
     private int totalFood;
@@ -54,7 +55,7 @@ public class Tribe {
             String tribeName = "Tribe of " + leader.getName();
             Tribe newTribe = new Tribe(nextId, tribeName);
 
-            newTribe.addMember(leader);
+            newTribe.setLeader(leader);
             availableDigimon.remove(leader);
 
             for (int i = 0; i < 2 && !availableDigimon.isEmpty(); i++) {
@@ -109,6 +110,9 @@ public class Tribe {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public Digimon getLeader() { return leader; }
+    public void setLeader(Digimon leader) { this.leader = leader; }
 
     public List<Digimon> getMembers() { return members; }
     public void setMembers(List<Digimon> members) { this.members = members; }

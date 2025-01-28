@@ -79,11 +79,7 @@ public class Politics {
         World.getInstance().getTribes().stream()
             .filter(tribe -> tribe != attacker && tribe != defender && !attackerAllies.contains(tribe) && !defenderAllies.contains(tribe))
             .forEach(tribe -> {
-                if (Math.random() < 0.3) {
-                    declareWar(tribe, Math.random() < 0.5 ? attacker : defender);
-                } else {
-                    tribe.getMembers().forEach(digimon -> digimon.setAggression(digimon.getAggression() + 20));
-                }
+                tribe.getMembers().forEach(digimon -> digimon.setAggression(digimon.getAggression() + 20));
             });
     }
 
@@ -160,27 +156,31 @@ public class Politics {
     }
 
     // Battle methods
-    private static void battle(Tribe attacker, Tribe defender) {
-        World world = World.getInstance();
-        Map<Sector, List<Digimon>> attackerForces = new HashMap<>();
-        Map<Sector, List<Digimon>> defenderForces = new HashMap<>();
 
-        // Organize forces by sector
-        for (Sector sector : world.getSectors()) {
-            List<Digimon> attackersInSector = sector.getDigimons().stream()
-                    .filter(d -> d.getTribe().equals(attacker.getName()))
-                    .collect(Collectors.toList());
-            List<Digimon> defendersInSector = sector.getDigimons().stream()
-                    .filter(d -> d.getTribe().equals(defender.getName()))
-                    .collect(Collectors.toList());
+        private static void battle(Tribe attacker, Tribe defender) {
+            World world = World.getInstance();
+            Map<Sector, List<Digimon>> attackerForces = new HashMap<>();
+            Map<Sector, List<Digimon>> defenderForces = new HashMap<>();
+        
+            // Organize forces by sector
+            for (Sector sector : world.getSectors()) {
+                List<Digimon> attackersInSector = sector.getDigimons().stream()
+                        .filter(d -> d.getTribe() != null && d.getTribe().equals(attacker.getName()))
+                        .collect(Collectors.toList());
+                List<Digimon> defendersInSector = sector.getDigimons().stream()
+                        .filter(d -> d.getTribe() != null && d.getTribe().equals(defender.getName()))
+                        .collect(Collectors.toList());
+        
+                if (!attackersInSector.isEmpty()) {
+                    attackerForces.put(sector, attackersInSector);
+                }
+                if (!defendersInSector.isEmpty()) {
+                    defenderForces.put(sector, defendersInSector);
+                }
+            }
+        
+            // Rest of the battle method...
 
-            if (!attackersInSector.isEmpty()) {
-                attackerForces.put(sector, attackersInSector);
-            }
-            if (!defendersInSector.isEmpty()) {
-                defenderForces.put(sector, defendersInSector);
-            }
-        }
 
         // Battle in each sector
         for (Sector sector : world.getSectors()) {

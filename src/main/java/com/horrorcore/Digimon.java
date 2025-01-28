@@ -178,6 +178,6 @@ public class Digimon {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, age, health, hunger, aggression, tribe, stage);
+        return Objects.hash(name, age, health, hunger, aggression, stage);
     }
 }

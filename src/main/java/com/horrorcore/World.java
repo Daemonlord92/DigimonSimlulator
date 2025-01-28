@@ -230,6 +230,17 @@ public class World {
                     for (Sector sector : sectors) {
                     for (Digimon digimon : new ArrayList<>(sector.getDigimons())) {
                         digimon.ageUp();
+                        if (digimon instanceof CelestialDigimon) {
+                            CelestialDigimon celestial = (CelestialDigimon) digimon;
+                            List<Digimon> nearbyDigimon = sector.getDigimons();
+                            if (Math.random() < 0.3) { // 30% chance to help
+                                if (Math.random() < 0.5) {
+                                    celestial.provideFood(nearbyDigimon);
+                                } else {
+                                    celestial.heal(nearbyDigimon);
+                                }
+                            }
+                        }
                         EvolutionSystem.checkEvolution(digimon);
 
                         if (digimon.getAggression() > 50) {
@@ -254,9 +265,13 @@ public class World {
                     }
                     INSTANCE.getTribes().forEach(tribe -> {
                         tribe.getMembers().forEach(digimon -> {
-                            tribe.getTechnologySystem().assignProfession(digimon, tribe.getTechnologySystem().getProfessions().keySet().stream().findFirst().get());
+                            if(digimon.getProfession() == null)
+                            {
+                                tribe.getTechnologySystem().assignProfession(digimon, tribe.getTechnologySystem().getProfessions().keySet().stream().findFirst().get());
+                            }
                         });
                         tribe.getTechnologySystem().performWork(INSTANCE);
+                        tribe.feedTribe();
                     });
 
                     List<Digimon> digimons = sector.getDigimons();
@@ -302,7 +317,7 @@ public class World {
                 }
 
                 int totalDigimon = sectors.stream().mapToInt(sector -> sector.getDigimons().size()).sum();
-                double deathProbability = 0.05; // 5% chance of death per Digimon per time step
+                double deathProbability = 0.0005; // 5% chance of death per Digimon per time step
                 int expectedDeaths = (int) Math.round(totalDigimon * deathProbability);
                 int actualDeaths = random.nextInt(expectedDeaths * 2 + 1); // Allow for some variability
 
@@ -349,16 +364,18 @@ private void simulateRandomDeath() {
     
     if (!allDigimon.isEmpty()) {
         for (Digimon digimon : allDigimon) {
-            if (shouldDigimonDie(digimon)) {
-                Sector digimonSector = sectors.stream()
-                    .filter(sector -> sector.getDigimons().contains(digimon))
-                    .findFirst()
-                    .orElse(null);
-                
-                if (digimonSector != null) {
-                    digimonSector.removeDigimon(digimon);
-                    LOGGER.info(digimon.getName() + " has died in " + digimonSector.getName());
-                    VisualGUI.getInstance(null).addEvent(digimon.getName() + " has died in " + digimonSector.getName(), VisualGUI.EventType.OTHER);
+            if (!(digimon instanceof CelestialDigimon)) {
+                if (shouldDigimonDie(digimon)) {
+                    Sector digimonSector = sectors.stream()
+                        .filter(sector -> sector.getDigimons().contains(digimon))
+                        .findFirst()
+                        .orElse(null);
+
+                    if (digimonSector != null) {
+                        digimonSector.removeDigimon(digimon);
+                        LOGGER.info(digimon.getName() + " has died in " + digimonSector.getName());
+                        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has died in " + digimonSector.getName(), VisualGUI.EventType.OTHER);
+                    }
                 }
             }
         }

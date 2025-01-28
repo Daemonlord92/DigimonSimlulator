@@ -100,6 +100,28 @@ public class Tribe {
         buildings += buildingsConstructed;
     }
 
+    public void feedTribe() {
+        int foodToFeed = members.size() * 10;
+        if (totalFood >= foodToFeed) {
+            totalFood -= foodToFeed;
+            VisualGUI.getInstance(null).addEvent(getName() + " has fed their tribe!", VisualGUI.EventType.POLITICAL);
+        } else {
+            VisualGUI.getInstance(null).addEvent(getName() + " has not enough food to feed their tribe!", VisualGUI.EventType.POLITICAL);
+        }
+    }
+
+    public void produceFood() {
+        int baseProduction = 10;
+        int farmersCount = this.technologySystem.getProfessions().getOrDefault("Agriculture", new ArrayList<>()).size();
+        int initialProduction = farmersCount * baseProduction;
+
+        double technologyBonus = 1 + (this.technologySystem.getTechnologyLevel("Agriculture") * 0.1);
+        int foodProduced = (int) (initialProduction * technologyBonus);
+
+        addFood(foodProduced);
+        VisualGUI.getInstance(null).addEvent(getName() + " has produced " + foodProduced + " food!", VisualGUI.EventType.POLITICAL);
+    }
+
     public void addResearchPoints(int points) {
         this.researchPoints += points;
     }

@@ -76,9 +76,16 @@ public class TechnologySystem {
                         break;
                     case "Builder":
                         buildingsConstructed += 1 + (getTechnologyLevel("Construction") / 2);
+                        if (getTechnologyLevel("Construction") % 10 == 0) {
+                            Tribe.buildCity(tribe);
+                        }
                         break;
                     case "Soldier":
                         militaryStrength += 1 + (getTechnologyLevel("Military") / 2);
+                        if(getTechnologyLevel("Military") % 10 == 0 && tribe.getMilitaryStrength() > 0) {
+                            tribe.setMilitaryStrength(tribe.getMilitaryStrength() + 40);
+                            VisualGUI.getInstance(null).addEvent(tribe.getName() + " has increased their military strength by 10!", VisualGUI.EventType.OTHER);
+                        }
                         break;
                     case "Scientist":
                         researchPoints += 1 + (getTechnologyLevel("Science") / 2);

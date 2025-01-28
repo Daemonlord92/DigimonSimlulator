@@ -22,10 +22,17 @@ public class DigimonSimulator {
                 gui.initialize();
 
                 // Add Digimons
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < 100; i++) {
                     Digimon digimon = DigimonGenerator.generateRandomDigimon();
                     world.addDigimon(digimon);
                     LOGGER.info("Added Digimon: " + digimon.getName());
+                }
+
+                for(int i = 0; i < 10; i++) {
+                    CelestialDigimon celestialDigimon = DigimonGenerator.generateCelestialDigimon();
+                    world.addDigimon(celestialDigimon);
+                    assert celestialDigimon != null;
+                    LOGGER.info("Added Celestial Digimon: " + celestialDigimon.getName());
                 }
             } else {
                 LOGGER.info("World is already initialized and filled with Digimons.");

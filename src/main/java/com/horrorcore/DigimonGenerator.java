@@ -65,6 +65,30 @@ public class DigimonGenerator {
         return new Digimon(name, age, health, hunger, aggression, stage);
     }
 
+    // Add to DigimonGenerator.java
+    public static CelestialDigimon generateCelestialDigimon() {
+        if (CelestialDigimon.getTotalCelestials() >= 10) {
+            return null;
+        }
+
+        Random random = new Random();
+        String[] celestialNames = {
+                "Seraphimon", "Ophanimon", "Cherubimon",
+                "ClavisAngemon", "SlashAngemon", "GuardiAngemon",
+                "Dominimon", "Rasielmon", "Raguelmon", "Metatron"
+        };
+
+        String name = celestialNames[random.nextInt(celestialNames.length)];
+        return new CelestialDigimon(
+                name,
+                0,
+                200, // Higher base health
+                0,   // No hunger
+                20,  // Low base aggression
+                "Celestial"
+        );
+    }
+
     public static List<Digimon> getAllDigimon() {
         return digimonList;
     }

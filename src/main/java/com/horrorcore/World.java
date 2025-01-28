@@ -17,6 +17,7 @@ import java.util.logging.Logger;
  * and various systems like technology and evolution.
  */
 public class World {
+    private static World INSTANCE;
     private static final Logger LOGGER = Logger.getLogger(World.class.getName());
     private List<Digimon> digimonList;
     private List<Tribe> tribes;
@@ -42,13 +43,20 @@ public class World {
      * After initializing these components, it calls the initializeSectors() method
      * to set up the world's geographical structure.
      */
-    public World() {
+    private World() {
         this.digimonList = new ArrayList<>();
         this.tribes = Tribe.getAllTribes();
         this.technologySystem = new TechnologySystem();
         this.time = 0;
         this.sectors = new ArrayList<>();
         this.random = new Random();
+    }
+
+    public static World getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new World();
+        }
+        return INSTANCE;
     }
 
     /**
@@ -215,7 +223,7 @@ public class World {
                     }
 
                     if (digimon.getAge() <= 25 || digimon.getHealth() >= 15 && random.nextBoolean()) {
-                        Optional<Sector> targetSectorOptional = sector.getAdjacentSectors().stream().findAny();
+                        Optional<Sector> targetSectorOptional = sector.getAdjacentSectors().parallelStream().findAny();
                         if (targetSectorOptional.isPresent()) {
                             sector.removeDigimon(digimon);
                             Sector targetSector = targetSectorOptional.get();
@@ -230,14 +238,7 @@ public class World {
                     BirthSystem.randomBirth(digimons);
                 }
                 if (time % 5 == 0) {
-                    EventSystem.triggerRandomEvent(digimons, tribes);
-                }
-
-                if (time % 2 == 0 && random.nextBoolean()) {
-                    Tribe.formNewTribe(digimons, tribes);
-                    if (!tribes.isEmpty()) {
-                        Tribe.buildCity(tribes.get(random.nextInt(tribes.size())));
-                    }
+                    EventSystem.triggerRandomEvent(INSTANCE);
                 }
 
                 if (digimons.isEmpty()) {
@@ -252,8 +253,13 @@ public class World {
 
             }
 
+            if(random.nextBoolean()) {
+                LOGGER.info("Triggering Political Situation");
+                Politics.updatePoliticalSituation();
+            }
             // Update political relationships
-            int currentAgeIndex = Arrays.asList(technologySystem.AGES).indexOf(technologySystem.getCurrentAge());
+
+            int currentAgeIndex = Arrays.asList(TechnologySystem.AGES).indexOf(technologySystem.getCurrentAge());
             // Advance technological age
             if (time == agesRequired.get(currentAgeIndex)) {
                 technologySystem.advanceAge();
@@ -267,7 +273,7 @@ public class World {
                 }
             }
 
-                int totalDigimon = sectors.stream().mapToInt(sector -> sector.getDigimons().size()).sum();
+                int totalDigimon = sectors.parallelStream().mapToInt(sector -> sector.getDigimons().size()).sum();
                 double deathProbability = 0.05; // 5% chance of death per Digimon per time step
                 int expectedDeaths = (int) Math.round(totalDigimon * deathProbability);
                 int actualDeaths = random.nextInt(expectedDeaths * 2 + 1); // Allow for some variability
@@ -314,7 +320,7 @@ private void simulateRandomDeath() {
         
         if (!allDigimon.isEmpty()) {
             Digimon unfortunateDigimon = allDigimon.get(random.nextInt(allDigimon.size()));
-            Sector digimonSector = sectors.stream()
+            Sector digimonSector = sectors.parallelStream()
                 .filter(sector -> sector.getDigimons().contains(unfortunateDigimon))
                 .findFirst()
                 .orElse(null);
@@ -406,7 +412,18 @@ private void simulateRandomDeath() {
      *         indicating the number of time units that have passed since the last age transition.
      */
     public int getTimeToNextAge() {
-        int currentAgeIndex = Arrays.asList(technologySystem.AGES).indexOf(technologySystem.getCurrentAge());
+        int currentAgeIndex = Arrays.asList(TechnologySystem.AGES).indexOf(technologySystem.getCurrentAge());
         return agesRequired.get(currentAgeIndex) - time;
+    }
+
+    public Tribe getTribeByName(Tribe tribe) {
+        return tribes.stream()
+               .filter(t -> t.getName().equalsIgnoreCase(tribe.getName()))
+               .findFirst()
+               .orElse(null);
+    }
+
+    public List<Tribe> getTribes() {
+        return tribes;
     }
 }

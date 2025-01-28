@@ -122,4 +122,8 @@ public class Tribe {
     public int getBuildings() {
         return buildings;
     }
+
+    public void removeMember(Digimon digimon) {
+        members.parallelStream().filter(digi -> digi.equals(digimon)).findFirst().ifPresent(members::remove);
+    }
 }

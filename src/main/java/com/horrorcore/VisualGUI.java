@@ -87,23 +87,27 @@ public class VisualGUI {
             frame = new JFrame("Digimon World Simulator");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(1440, 1020);
-            frame.setLayout(new BorderLayout());
+            frame.setLayout(new GridBagLayout());
+    
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.fill = GridBagConstraints.BOTH;
+            gbc.insets = new Insets(5, 5, 5, 5);
     
             // Create world info panel
-            JPanel worldInfoPanel = new JPanel(new BorderLayout());
             worldInfoArea = new JTextArea(5, 50);
             worldInfoArea.setEditable(false);
             JScrollPane worldInfoScrollPane = new JScrollPane(worldInfoArea);
-            worldInfoPanel.add(new JLabel("World Information:"), BorderLayout.NORTH);
-            worldInfoPanel.add(worldInfoScrollPane, BorderLayout.CENTER);
+            worldInfoScrollPane.setBorder(BorderFactory.createTitledBorder("World Information"));
     
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            gbc.gridwidth = 3;
+            gbc.weightx = 1.0;
+            gbc.weighty = 0.2;
+            frame.add(worldInfoScrollPane, gbc);
+    
+            // Create sector panels
             JPanel sectorPanel = new JPanel(new GridLayout(0, 3, 10, 10));
-    
-            sectorPanel.add(worldInfoPanel, BorderLayout.WEST);
-    
-    
-            frame.setVisible(true);
-    
             for (Sector sector : world.getSectors()) {
                 String sectorName = sector.getName();
                 JTextArea sectorArea = new JTextArea();
@@ -112,40 +116,25 @@ public class VisualGUI {
                 JScrollPane scrollPane = new JScrollPane(sectorArea);
                 scrollPane.setBorder(BorderFactory.createTitledBorder(sectorName));
                 sectorPanel.add(scrollPane);
-                System.out.println("Added sector to GUI: " + sectorName);
             }
     
-            attackEventArea = new JTextArea();
-            attackEventArea.setEditable(false);
-            JScrollPane attackEventScrollPane = new JScrollPane(attackEventArea);
-            attackEventScrollPane.setBorder(BorderFactory.createTitledBorder("Attack Events"));
+            gbc.gridy = 1;
+            gbc.weighty = 0.6;
+            frame.add(sectorPanel, gbc);
     
-            politicalEventArea = new JTextArea();
-            politicalEventArea.setEditable(false);
-            JScrollPane politicalEventScrollPane = new JScrollPane(politicalEventArea);
-            politicalEventScrollPane.setBorder(BorderFactory.createTitledBorder("Political Events"));
+            // Create event panels
+            attackEventArea = createEventArea("Attack Events");
+            politicalEventArea = createEventArea("Political Events");
+            otherEventArea = createEventArea("Other Events");
     
-            otherEventArea = new JTextArea();
-            otherEventArea.setEditable(false);
-            JScrollPane otherEventScrollPane = new JScrollPane(otherEventArea);
-            otherEventScrollPane.setBorder(BorderFactory.createTitledBorder("Other Events"));
+            JPanel eventsPanel = new JPanel(new GridLayout(1, 3, 10, 10));
+            eventsPanel.add(new JScrollPane(attackEventArea));
+            eventsPanel.add(new JScrollPane(politicalEventArea));
+            eventsPanel.add(new JScrollPane(otherEventArea));
     
-            JPanel eventsPanel = new JPanel(new GridLayout(1, 3));
-            eventsPanel.add(attackEventScrollPane);
-            eventsPanel.add(politicalEventScrollPane);
-            eventsPanel.add(otherEventScrollPane);
-    
-            JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, sectorPanel, eventsPanel);
-            splitPane.setResizeWeight(0.7);
-    
-            frame.add(splitPane, BorderLayout.CENTER);
-    
-            frame.addComponentListener(new ComponentAdapter() {
-                @Override
-                public void componentResized(ComponentEvent e) {
-                    splitPane.setDividerLocation(0.7);
-                }
-            });
+            gbc.gridy = 2;
+            gbc.weighty = 0.2;
+            frame.add(eventsPanel, gbc);
     
             frame.setVisible(true);
     
@@ -154,6 +143,13 @@ public class VisualGUI {
         });
     
         initialized = true;
+    }
+    
+    private JTextArea createEventArea(String title) {
+        JTextArea area = new JTextArea();
+        area.setEditable(false);
+        area.setBorder(BorderFactory.createTitledBorder(title));
+        return area;
     }
 
     private void startPeriodicUpdates() {
@@ -233,7 +229,7 @@ public class VisualGUI {
         SwingUtilities.invokeLater(() -> {
             JTextArea targetArea;
             int currentTime = world.getTime();
-            if (currentTime - lastClearTime >= 5) {
+            if (currentTime - lastClearTime >= 25) {
                 clearAllEvents();
                 lastClearTime = currentTime;
             }

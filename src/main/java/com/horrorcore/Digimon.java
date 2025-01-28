@@ -2,6 +2,7 @@ package com.horrorcore;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Digimon {
     private String name;
@@ -11,6 +12,7 @@ public class Digimon {
     private int aggression;
     private Tribe tribe;
     private String stage;
+    private int friendship;
 
     /**
      * Constructs a new Digimon with the specified attributes.
@@ -328,5 +330,30 @@ public class Digimon {
         return "Name: " + this.name + ", Age: " + this.age + ", Health: " + this.health +
                 ", Hunger: " + this.hunger + ", Aggression: " + this.aggression + ", Tribe: "
                 + (this.tribe != null ? this.tribe.getName():"independent");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Digimon digimon)) return false;
+        return getAge() == digimon.getAge()
+                && getHealth() == digimon.getHealth()
+                && getHunger() == digimon.getHunger()
+                && getAggression() == digimon.getAggression()
+                && Objects.equals(getName(), digimon.getName())
+                && Objects.equals(getTribe(), digimon.getTribe())
+                && Objects.equals(getStage(), digimon.getStage());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getName(), getAge(), getHealth(), getHunger(), getAggression(), getTribe(), getStage());
+    }
+
+    public void increaseFriendship(Digimon tribeMember, int friendshipPoints) {
+
+    }
+
+    public void decreaseFriendship(Digimon digimon, int friendship) {
+
     }
 }

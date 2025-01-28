@@ -21,30 +21,27 @@ public class EventSystem {
      * Triggers a random event in the Digimon world, which can be political, natural, or healing.
      * The event is chosen randomly and its effects are applied to the Digimon and tribes.
      *
-     * @param digimonList A list of all Digimon in the world. This list is used to apply effects
-     *                    of natural events and healing events to individual Digimon.
-     * @param tribes A list of all tribes in the world. This list is used to handle political
-     *               events that affect tribes and their members.
+     * @param world using the current state of the Digimon world.
      */
-    public static void triggerRandomEvent(List<Digimon> digimonList, List<Tribe> tribes) {
+    public static void triggerRandomEvent(World world) {
         int eventType = random.nextInt(3); // 0: Political, 1: Natural, 2: Healing
-    
+
         switch (eventType) {
             case 0:
                 String politicalEvent = POLITICAL_EVENTS[random.nextInt(POLITICAL_EVENTS.length)];
                 VisualGUI.getInstance(null).addEvent("Political Event: " + politicalEvent, VisualGUI.EventType.POLITICAL);
-                handlePoliticalEvent(tribes, politicalEvent);
+                handlePoliticalEvent(world, politicalEvent);
                 break;
             case 1:
                 String naturalEvent = NATURAL_EVENTS[random.nextInt(NATURAL_EVENTS.length)];
                 VisualGUI.getInstance(null).addEvent("Natural Event: " + naturalEvent, VisualGUI.EventType.OTHER);
-                handleNaturalEvent(digimonList, naturalEvent);
+                handleNaturalEvent(world, naturalEvent);
                 break;
             case 2:
                 VisualGUI.getInstance(null).addEvent("Healing Event: A mysterious force heals all Digimon!", VisualGUI.EventType.OTHER);
-                for (Digimon digimon : digimonList) {
-                    digimon.setHealth(100);
-                }
+                world.getSectors().stream()
+                        .flatMap(sector -> sector.getDigimons().stream())
+                        .forEach(digimon -> digimon.setHealth(100));
                 break;
         }
     }
@@ -55,61 +52,54 @@ public class EventSystem {
      * declaring war, making trade agreements, and more. Each event type has its own set of
      * effects on the tribes and their member Digimon.
      *
-     * @param tribes A list of all tribes in the Digimon world. This list is used to select
-     *               tribes for events and apply effects to their members.
+     * @param world Current instance of the Digimon world.
      * @param event A string representing the type of political event to be handled. Valid
      *              events include "Alliance Formed", "War Declared", "Trade Agreement",
      *              "Cultural Exchange", "Diplomatic Mission", "Espionage", "Convert Digimon",
      *              and "Make Peace".
      */
-    private static void handlePoliticalEvent(List<Tribe> tribes, String event) {
-        // ... existing code for other events
+    private static void handlePoliticalEvent(World world, String event) {
+        List<Tribe> tribes = world.getTribes();
 
         switch (event) {
             case "Alliance Formed":
                 if (tribes.size() >= 2) {
-                    int tribeA = random.nextInt(tribes.size()), tribeB;
-                    do {
-                        tribeB = random.nextInt(tribes.size());
-                    } while (tribeA == tribeB);
-                    Politics.formAlliance(tribes.get(tribeA), tribes.get(tribeB));
-                    int finalTribeB = tribeB;
-                    tribes.stream()
-                            .flatMap(tribe -> tribe.getMembers().stream())
-                            .forEach(digimon -> {
-                                if (digimon.getTribe() != null) {
-                                    if (tribeA == digimon.getTribe().getId() || finalTribeB == digimon.getTribe().getId()) {
+                    Tribe tribeA = tribes.get(random.nextInt(tribes.size()));
+                    Tribe tribeB = tribes.get(random.nextInt(tribes.size()));
+                    if (tribeA != tribeB) {
+                        Politics.formAlliance(tribeA, tribeB);
+                        world.getSectors().stream()
+                                .flatMap(sector -> sector.getDigimons().stream())
+                                .forEach(digimon -> {
+                                    if (digimon.getTribe() == tribeA || digimon.getTribe() == tribeB) {
                                         digimon.setAggression(digimon.getAggression() + 100);
-                                    } else {
+                                    } else if (digimon.getTribe() != null) {
                                         digimon.setAggression(digimon.getAggression() + 50);
+                                    } else {
+                                        digimon.setAggression(digimon.getAggression() + 26);
                                     }
-                                } else {
-                                    digimon.setAggression(digimon.getAggression() + 26);
-                                }
-                            });
+                                });
+                    }
                 }
                 break;
             case "War Declared":
                 if (tribes.size() >= 2) {
-                    int tribeA = random.nextInt(tribes.size()), tribeB;
-                    do {
-                        tribeB = random.nextInt(tribes.size());
-                    } while (tribeA == tribeB);
-                    Politics.declareWar(tribes.get(tribeA), tribes.get(tribeB));
-                    int finalTribeB = tribeB;
-                    tribes.stream()
-                            .flatMap(tribe -> tribe.getMembers().stream())
-                            .forEach(digimon -> {
-                                if (digimon.getTribe() != null) {
-                                    if (tribeA == digimon.getTribe().getId() || finalTribeB == digimon.getTribe().getId()) {
+                    Tribe tribeA = tribes.get(random.nextInt(tribes.size()));
+                    Tribe tribeB = tribes.get(random.nextInt(tribes.size()));
+                    if (tribeA != tribeB) {
+                        Politics.declareWar(tribeA, tribeB);
+                        world.getSectors().stream()
+                                .flatMap(sector -> sector.getDigimons().stream())
+                                .forEach(digimon -> {
+                                    if (digimon.getTribe() == tribeA || digimon.getTribe() == tribeB) {
                                         digimon.setAggression(digimon.getAggression() + 100);
-                                    } else {
+                                    } else if (digimon.getTribe() != null) {
                                         digimon.setAggression(digimon.getAggression() + 50);
+                                    } else {
+                                        digimon.setAggression(digimon.getAggression() + 26);
                                     }
-                                } else {
-                                    digimon.setAggression(digimon.getAggression() + 26);
-                                }
-                            });
+                                });
+                    }
                 }
                 break;
             case "Trade Agreement":
@@ -118,12 +108,15 @@ public class EventSystem {
                     Tribe tribe2 = tribes.get(random.nextInt(tribes.size()));
                     if (tribe1 != tribe2) {
                         VisualGUI.getInstance(null).addEvent("Trade agreement formed between " + tribe1.getName() + " and " + tribe2.getName(), VisualGUI.EventType.POLITICAL);
-                        tribe1.getMembers().stream().forEach(digimon -> {
-                            digimon.setHunger(digimon.getHunger() - 20);
-                        });
-                        tribe2.getMembers().stream().forEach(digimon -> {
-                            digimon.setHunger(digimon.getHunger() + 20);
-                        });
+                        world.getSectors().stream()
+                                .flatMap(sector -> sector.getDigimons().stream())
+                                .forEach(digimon -> {
+                                    if (digimon.getTribe() == tribe1) {
+                                        digimon.setHunger(digimon.getHunger() - 20);
+                                    } else if (digimon.getTribe() == tribe2) {
+                                        digimon.setHunger(digimon.getHunger() + 20);
+                                    }
+                                });
                     }
                 }
                 break;
@@ -142,8 +135,8 @@ public class EventSystem {
                     Tribe tribe = tribes.get(random.nextInt(tribes.size()));
                     VisualGUI.getInstance(null).addEvent(tribe.getName() + " has sent out a diplomatic mission", VisualGUI.EventType.POLITICAL);
                     // Implement diplomatic mission effects
-                    tribes.stream()
-                            .flatMap(sTribe -> sTribe.getMembers().stream())
+                    tribes.parallelStream()
+                            .flatMap(sTribe -> sTribe.getMembers().parallelStream())
                             .forEach(digimon -> {
                                 if (digimon.getTribe() == null) {
                                     digimon.setAggression(digimon.getAggression() - 20);
@@ -205,25 +198,33 @@ public class EventSystem {
      * to each Digimon in the provided list. Currently, it handles two types of events:
      * "Food Shortage" and "Plague".
      *
-     * @param digimonList A list of Digimon objects that will be affected by the natural event.
-     *                    Each Digimon in this list will have its attributes modified based on the event.
+     * @param world Current state of the Digimon World.
      * @param event A String representing the type of natural event occurring. 
      *              Valid values are "Food Shortage" and "Plague".
      *              For "Food Shortage", Digimon's aggression and hunger increase.
      *              For "Plague", Digimon's hunger and aggression increase, while health decreases.
      */
-    private static void handleNaturalEvent(List<Digimon> digimonList, String event) {
-        for (Digimon digimon : digimonList) {
-            if (event.equals("Food Shortage")) {
-                digimon.setAggression(digimon.getAggression() + 25);
-                digimon.setHunger(digimon.getHunger() + 30);
-                VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a food shortage", VisualGUI.EventType.OTHER);
-            } else if (event.equals("Plague")) {
-                digimon.setHunger(digimon.getHunger() + 10);
-                digimon.setAggression(digimon.getAggression() + 10);
-                digimon.setHealth(digimon.getHealth() - 20);
-                VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a plague", VisualGUI.EventType.OTHER);
-            }
-        }
+    private static void handleNaturalEvent(World world, String event) {
+        world.getSectors().stream()
+                .flatMap(sector -> sector.getDigimons().stream())
+                .forEach(digimon -> {
+                    if (event.equals("Food Shortage")) {
+                        digimon.setAggression(digimon.getAggression() + 25);
+                        digimon.setHunger(digimon.getHunger() + 30);
+                        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a food shortage", VisualGUI.EventType.OTHER);
+                    } else if (event.equals("Plague")) {
+                        digimon.setHunger(digimon.getHunger() + 10);
+                        digimon.setAggression(digimon.getAggression() + 10);
+                        digimon.setHealth(digimon.getHealth() - 20);
+                        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a plague", VisualGUI.EventType.OTHER);
+                    } else if (event.equals("Storm")) {
+                        digimon.setHealth(digimon.getHealth() - 15);
+                        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a storm", VisualGUI.EventType.OTHER);
+                    } else if (event.equals("Earthquake")) {
+                        digimon.setHealth(digimon.getHealth() - 25);
+                        digimon.setAggression(digimon.getAggression() + 15);
+                        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by an earthquake", VisualGUI.EventType.OTHER);
+                    }
+                });
     }
 }

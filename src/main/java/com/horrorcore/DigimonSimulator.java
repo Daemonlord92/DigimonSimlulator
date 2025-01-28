@@ -2,50 +2,60 @@ package com.horrorcore;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DigimonSimulator {
-    /**
-     * The main entry point for the Digimon Simulator application.
-     * This method initializes the world, creates and populates it with Digimons,
-     * sets up the GUI, and starts the simulation in a separate thread.
-     * It also sets up a shutdown hook to gracefully terminate the application.
-     *
-     * @param args Command line arguments passed to the program (not used in this implementation)
-     */
-    public static void main(String[] args) {
-        World world = new World();
-        VisualGUI gui = VisualGUI.getInstance(world);
-        System.out.println("Created VisualGUI instance: " + gui);
-    
-        // Initialize the world first
-        world.initialize();
-        System.out.println("World initialized with sectors: " + world.getSectors());
-    
-        // Then initialize GUI
-        gui.initialize();
-    
-        // Add Digimons
-        for (int i = 0; i < 10; i++) {
-            Digimon digimon = DigimonGenerator.generateRandomDigimon();
-            world.addDigimon(digimon);
-            System.out.println("Added Digimon: " + digimon.getName());
-        }
-    
-        ExecutorService executor = Executors.newCachedThreadPool();
+    private static final Logger LOGGER = Logger.getLogger(DigimonSimulator.class.getName());
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("Shutting down...");
-            executor.shutdownNow();
-            gui.shutdown();
-        }));
-    
-        System.out.println("Starting simulation...");
-        executor.submit(() -> {
-            try {
-                world.simulate(gui);
-            } catch (Exception e) {
-                e.printStackTrace();
+    public static void main(String[] args) {
+        World world = World.getInstance();
+        VisualGUI gui = VisualGUI.getInstance(world);
+        LOGGER.info("Created VisualGUI instance: " + gui);
+
+        try {
+            // Initialize the world first
+            world.initialize();
+            LOGGER.info("World initialized with sectors: " + world.getSectors());
+
+            // Then initialize GUI
+            gui.initialize();
+
+            // Add Digimons
+            for (int i = 0; i < 10; i++) {
+                Digimon digimon = DigimonGenerator.generateRandomDigimon();
+                world.addDigimon(digimon);
+                LOGGER.info("Added Digimon: " + digimon.getName());
             }
-        }, "Simulation Thread");
+
+            ExecutorService executor = Executors.newCachedThreadPool();
+
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                LOGGER.info("Shutting down...");
+                executor.shutdownNow();
+                try {
+                    if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                        LOGGER.warning("Executor did not terminate in the specified time.");
+                    }
+                } catch (InterruptedException e) {
+                    LOGGER.log(Level.SEVERE, "Shutdown interrupted", e);
+                }
+                gui.shutdown();
+            }));
+
+            LOGGER.info("Starting simulation...");
+            executor.submit(() -> {
+                try {
+                    world.simulate(gui);
+                } catch (Exception e) {
+                    LOGGER.log(Level.SEVERE, "Simulation failed", e);
+                }
+            }, "Simulation Thread");
+
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to initialize the simulator", e);
+            System.exit(1);
+        }
     }
 }

@@ -72,7 +72,9 @@ public class TechnologySystem {
     
                 switch (profession) {
                     case "Farmer":
-                        foodProduced += 1 + (getTechnologyLevel("Agriculture") / 2);
+                        int baseProduction = 10;
+                        double technologyBonus = 1 + (this.getTechnologyLevel("Agriculture") * 0.1);
+                        foodProduced += (int) (baseProduction * technologyBonus);
                         break;
                     case "Builder":
                         buildingsConstructed += 1 + (getTechnologyLevel("Construction") / 2);
@@ -149,5 +151,13 @@ public class TechnologySystem {
 
     public void setResearchPoints(int researchPoints) {
         this.researchPoints = researchPoints;
+    }
+
+    public String getRandomProfession() {
+        if (professions.isEmpty()) {
+            return null;
+        }
+        List<String> professionList = new ArrayList<>(professions.keySet());
+        return professionList.get(new Random().nextInt(professionList.size()));
     }
 }

@@ -10,6 +10,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Represents the Digimon world, containing all the elements and systems of the simulation.
@@ -265,9 +266,12 @@ public class World {
                     }
                     INSTANCE.getTribes().forEach(tribe -> {
                         tribe.getMembers().forEach(digimon -> {
-                            if(digimon.getProfession() == null)
-                            {
-                                tribe.getTechnologySystem().assignProfession(digimon, tribe.getTechnologySystem().getProfessions().keySet().stream().findFirst().get());
+                            if (digimon.getProfession() == null || random.nextDouble() < 0.1) { // 10% chance to reassign profession
+                                String randomProfession = tribe.getTechnologySystem().getRandomProfession();
+                                if (randomProfession != null) {
+                                    tribe.getTechnologySystem().assignProfession(digimon, randomProfession);
+                                    LOGGER.info(digimon.getName() + " assigned profession: " + randomProfession);
+                                }
                             }
                         });
                         tribe.getTechnologySystem().performWork(INSTANCE);
@@ -296,7 +300,7 @@ public class World {
                 }
 
 
-                if(random.nextBoolean()) {
+                if(random.nextBoolean() && tribes.size() > 1) {
                     LOGGER.info("Triggering Political Situation");
                     Politics.updatePoliticalSituation();
                 }
@@ -328,7 +332,14 @@ public class World {
                 SimulationSubject.getInstance().notifyWorldUpdate(this); // Use the passed GUI instance
 
                 time++;
-                INSTANCE.getTribes().stream().filter(tribe -> tribe.getMembers().isEmpty()).forEach(tribe -> Tribe.getAllTribes().remove(tribe));
+                List<Tribe> tribesToRemove = INSTANCE.getTribes().stream()
+                    .filter(tribe -> tribe.getMembers().isEmpty())
+                    .collect(Collectors.toList());
+                
+                if (!tribesToRemove.isEmpty()) {
+                    Tribe.getAllTribes().removeAll(tribesToRemove);
+                    LOGGER.info("Removed " + tribesToRemove.size() + " empty tribes.");
+                }
                 System.gc();
             } catch (InterruptedException e) {
                 LOGGER.log(Level.WARNING, "Simulation interrupted", e);
@@ -344,7 +355,7 @@ public class World {
             SimulationSubject.getInstance().notifyWorldUpdate(this);
 
             try {
-                Thread.sleep(1000); // Adjust as needed
+                Thread.sleep(3000); // Adjust as needed
             } catch (InterruptedException e) {
                 LOGGER.log(Level.WARNING, "Sleep interrupted", e);
                 Thread.currentThread().interrupt();

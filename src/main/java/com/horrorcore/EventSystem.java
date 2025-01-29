@@ -28,10 +28,17 @@ public class EventSystem {
 
         switch (eventType) {
             case 0:
-                String politicalEvent = POLITICAL_EVENTS[random.nextInt(POLITICAL_EVENTS.length)];
-                SimulationSubject.getInstance().notifyEvent("Political Event: " + politicalEvent, SimulationEvent.EventType.POLITICAL);
-                handlePoliticalEvent(world, politicalEvent);
-                break;
+                if (world.getTribes().size() >= 2 && Math.random() < 0.1) {
+                    String politicalEvent = POLITICAL_EVENTS[random.nextInt(POLITICAL_EVENTS.length)];
+                    SimulationSubject.getInstance().notifyEvent("Political Event: " + politicalEvent, SimulationEvent.EventType.POLITICAL);
+                    handlePoliticalEvent(world, politicalEvent);
+                    break;
+                } else if (random.nextBoolean() && random.nextInt(10) % ((random.nextInt(10) + 1)) == 0) {
+                    String politicalEvent = "Form New Tribe";
+                    SimulationSubject.getInstance().notifyEvent("Political Event: " + politicalEvent, SimulationEvent.EventType.POLITICAL);
+                    handlePoliticalEvent(world, politicalEvent);
+                    break;
+                }
             case 1:
                 String naturalEvent = NATURAL_EVENTS[random.nextInt(NATURAL_EVENTS.length)];
                 SimulationSubject.getInstance().notifyEvent("Natural Event: " + naturalEvent, SimulationEvent.EventType.OTHER);

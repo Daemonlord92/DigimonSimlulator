@@ -15,6 +15,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 
 public class VisualGUI extends Application implements SimulationObserver {
     private static final int MAX_EVENTS = 20;
@@ -23,7 +27,7 @@ public class VisualGUI extends Application implements SimulationObserver {
     private World world;
     private Stage primaryStage;
     private static Map<String, TextArea> sectorPanels;
-    private TextArea worldInfoArea;
+    private Text worldInfoArea;
     private TextArea attackEventArea;
     private TextArea politicalEventArea;
     private TextArea tribeInfoArea;
@@ -57,98 +61,86 @@ public class VisualGUI extends Application implements SimulationObserver {
             System.out.println("VisualGUI already initialized. Skipping initialization.");
             return;
         }
-
+    
         Platform.runLater(() -> {
             primaryStage.setTitle("Digimon World Simulator");
-
+    
             BorderPane root = new BorderPane();
-
-            // Create menu bar
-            MenuBar menuBar = new MenuBar();
-            Menu fileMenu = new Menu("File");
-            MenuItem exitItem = new MenuItem("Exit");
-            exitItem.setOnAction(e -> System.exit(0));
-            fileMenu.getItems().add(exitItem);
-
-            Menu viewMenu = new Menu("View");
-            MenuItem refreshItem = new MenuItem("Refresh");
-            refreshItem.setOnAction(e -> updateDisplay());
-            viewMenu.getItems().add(refreshItem);
-
-            Menu helpMenu = new Menu("Help");
-            MenuItem aboutItem = new MenuItem("About");
-            aboutItem.setOnAction(e -> showAboutDialog());
-            helpMenu.getItems().add(aboutItem);
-
-            menuBar.getMenus().addAll(fileMenu, viewMenu, helpMenu);
-
-            // Main panel (center)
-            VBox mainPanel = new VBox(10);
-            mainPanel.setPadding(new Insets(10));
-
-            // World info area
-            worldInfoArea = new TextArea();
-            worldInfoArea.setEditable(false);
-            worldInfoArea.setPrefRowCount(5);
-            TitledPane worldInfoPane = new TitledPane("World Information", worldInfoArea);
-            worldInfoPane.setCollapsible(false);
-
-            // Sector panels
-            GridPane sectorPanel = new GridPane();
-            sectorPanel.setHgap(10);
-            sectorPanel.setVgap(10);
-            int col = 0, row = 0;
+            root.setStyle("-fx-background-color: #000000;");
+    
+            // Create the main display area
+            VBox mainContent = new VBox(10);
+            mainContent.setPadding(new Insets(20));
+    
+            // World info display
+            Text worldInfoText = new Text();
+            worldInfoText.setFont(Font.font("Courier New", 14));
+            worldInfoText.setFill(Color.LIMEGREEN);
+    
+            // Create TabPane for different information sections
+            TabPane infoTabs = new TabPane();
+            infoTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+    
+            // Sector info tab
+            Tab sectorsTab = new Tab("Sectors");
+            TabPane sectorTabs = new TabPane();
+            sectorTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
             for (Sector sector : world.getSectors()) {
-                String sectorName = sector.getName();
                 TextArea sectorArea = new TextArea();
                 sectorArea.setEditable(false);
-                sectorArea.setPrefRowCount(5);
-                sectorArea.setPrefColumnCount(20);
-                sectorPanels.put(sectorName, sectorArea);
-                TitledPane sectorPane = new TitledPane(sectorName, sectorArea);
-                sectorPane.setCollapsible(false);
-                sectorPanel.add(sectorPane, col, row);
-                if (++col == 3) {
-                    col = 0;
-                    row++;
-                }
+                sectorArea.setStyle("-fx-control-inner-background: #000000; -fx-text-fill: #00ff00;");
+                sectorPanels.put(sector.getName(), sectorArea);
+                
+                Tab tab = new Tab(sector.getName(), sectorArea);
+                sectorTabs.getTabs().add(tab);
             }
-
-            // Event areas
+            sectorsTab.setContent(sectorTabs);
+    
+            // Tribe info tab
+            Tab tribesTab = new Tab("Tribes");
+            tribeInfoArea = new TextArea();
+            tribeInfoArea.setEditable(false);
+            tribeInfoArea.setStyle("-fx-control-inner-background: #000000; -fx-text-fill: #00ff00;");
+            tribesTab.setContent(tribeInfoArea);
+    
+            // Event info tab
+            Tab eventsTab = new Tab("Events");
+            VBox eventBox = new VBox(10);
             attackEventArea = createEventArea("Attack Events");
             politicalEventArea = createEventArea("Political Events");
             otherEventArea = createEventArea("Other Events");
-
-            HBox eventsPanel = new HBox(10);
-            eventsPanel.getChildren().addAll(
-                new TitledPane("Attack Events", attackEventArea),
-                new TitledPane("Political Events", politicalEventArea),
-                new TitledPane("Other Events", otherEventArea)
+            eventBox.getChildren().addAll(
+                    new Label("Attack Events:"), attackEventArea,
+                    new Label("Political Events:"), politicalEventArea,
+                    new Label("Other Events:"), otherEventArea
             );
-
-            mainPanel.getChildren().addAll(worldInfoPane, sectorPanel, eventsPanel);
-
-            // Tribe info area (right)
-            tribeInfoArea = new TextArea();
-            tribeInfoArea.setEditable(false);
-            TitledPane tribeInfoPane = new TitledPane("Tribe Information", tribeInfoArea);
-            tribeInfoPane.setCollapsible(false);
-
-            root.setTop(menuBar);
-            root.setCenter(mainPanel);
-            root.setRight(tribeInfoPane);
-
-            Scene scene = new Scene(root, 1440, 1020);
+            eventsTab.setContent(eventBox);
+    
+            infoTabs.getTabs().addAll(sectorsTab, tribesTab, eventsTab);
+    
+            mainContent.getChildren().addAll(worldInfoText, infoTabs);
+    
+            root.setCenter(mainContent);
+    
+            Scene scene = new Scene(root, 1000, 800);
+            if (getClass().getResource("/styles.css") != null) {
+                scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+            } else {
+                System.err.println("Warning: styles.css not found");
+            }
             primaryStage.setScene(scene);
             primaryStage.show();
-
+    
+            // Update references
+            this.worldInfoArea = worldInfoText;
+    
             // Start periodic updates
             startPeriodicUpdates();
         });
-
+    
         // Ensure initial update
         updateDisplay();
-
+    
         SimulationSubject.getInstance().addObserver(this);
         initialized = true;
     }
@@ -156,7 +148,8 @@ public class VisualGUI extends Application implements SimulationObserver {
     private TextArea createEventArea(String title) {
         TextArea area = new TextArea();
         area.setEditable(false);
-        area.setPrefRowCount(10);
+        area.setPrefRowCount(5);
+        area.setStyle("-fx-control-inner-background: #000000; -fx-text-fill: #00ff00;");
         return area;
     }
 
@@ -190,7 +183,7 @@ public class VisualGUI extends Application implements SimulationObserver {
                     }
                     StringBuilder sectorInfo = new StringBuilder();
                     sectorInfo.append("Digimons in ").append(sectorName).append(":\n");
-                    
+
                     for (Digimon digimon : sector.getDigimons()) {
                         if (digimon == null) {
                             System.err.println("Warning: Null Digimon found in sector: " + sectorName);
@@ -261,7 +254,6 @@ public class VisualGUI extends Application implements SimulationObserver {
                     targetArea = otherEventArea;
                     break;
             }
-
             String[] events = targetArea.getText().split("\n");
             StringBuilder newEvents = new StringBuilder();
 

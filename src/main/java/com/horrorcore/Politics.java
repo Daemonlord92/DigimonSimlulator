@@ -147,7 +147,7 @@ public class Politics {
 
     private static void updateWarSituations() {
         wars.forEach((attacker, defenders) ->
-            defenders.parallelStream().forEach(defender -> {
+            defenders.stream().forEach(defender -> {
                 if (Math.random() < 0.1) {
                     battle(attacker, defender);
                 }

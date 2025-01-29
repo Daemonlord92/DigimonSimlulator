@@ -88,6 +88,14 @@ public class Digimon {
         }
     }
 
+    public void leaveTribe() {
+        if (this.tribe!= null) {
+            this.tribe.getMembers().remove(this);
+            this.tribe = null;
+            SimulationSubject.getInstance().notifyEvent(this.name + " left the tribe.", SimulationEvent.EventType.POLITICAL);
+        }
+    }
+
     public void evolve(String newName, String newStage) {
         SimulationSubject.getInstance().notifyEvent(this.name + " is evolving to " + newStage + " stage!", SimulationEvent.EventType.OTHER);
 

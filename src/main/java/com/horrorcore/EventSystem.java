@@ -38,6 +38,11 @@ public class EventSystem {
                     SimulationSubject.getInstance().notifyEvent("Political Event: " + politicalEvent, SimulationEvent.EventType.POLITICAL);
                     handlePoliticalEvent(world, politicalEvent);
                     break;
+                } else if (random.nextBoolean() && world.getTribes().size() > 1) {
+                    String politicalEvent = "Convert Digimon";
+                    SimulationSubject.getInstance().notifyEvent("Political Event: " + politicalEvent, SimulationEvent.EventType.POLITICAL);
+                    handlePoliticalEvent(world, politicalEvent);
+                    break;
                 }
             case 1:
                 String naturalEvent = NATURAL_EVENTS[random.nextInt(NATURAL_EVENTS.length)];
@@ -142,8 +147,8 @@ public class EventSystem {
                     Tribe tribe = tribes.get(random.nextInt(tribes.size()));
                     SimulationSubject.getInstance().notifyEvent(tribe.getName() + " has sent out a diplomatic mission", SimulationEvent.EventType.POLITICAL);
                     // Implement diplomatic mission effects
-                    tribes.parallelStream()
-                            .flatMap(sTribe -> sTribe.getMembers().parallelStream())
+                    tribes.stream()
+                            .flatMap(sTribe -> sTribe.getMembers().stream())
                             .forEach(digimon -> {
                                 if (digimon.getTribe() == null) {
                                     digimon.setAggression(digimon.getAggression() - 20);
@@ -165,9 +170,9 @@ public class EventSystem {
             case "Convert Digimon":
                 if (!tribes.isEmpty()) {
                     Tribe convertingTribe = tribes.get(random.nextInt(tribes.size()));
-                    List<Digimon> unaffiliatedDigimon = tribes.parallelStream()
-                            .flatMap(tribe -> tribe.getMembers().parallelStream())
-                            .filter(digimon -> digimon.getTribe() == null)
+                    List<Digimon> unaffiliatedDigimon = tribes.stream()
+                            .flatMap(tribe -> tribe.getMembers().stream())
+                            .filter(digimon -> digimon.getTribe() != convertingTribe)
                             .toList();
 
                     if (!unaffiliatedDigimon.isEmpty()) {

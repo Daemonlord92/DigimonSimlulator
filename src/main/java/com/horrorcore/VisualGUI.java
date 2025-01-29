@@ -86,8 +86,35 @@ public class VisualGUI implements SimulationObserver {
             frame = new JFrame("Digimon World Simulator");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(1440, 1020);
-            frame.setLayout(new GridBagLayout());
+            frame.setLayout(new BorderLayout());
+
+            // Create menu bar
+            JMenuBar menuBar = new JMenuBar();
+            frame.setJMenuBar(menuBar);
+
+            // File menu
+            JMenu fileMenu = new JMenu("File");
+            menuBar.add(fileMenu);
+            JMenuItem exitItem = new JMenuItem("Exit");
+            exitItem.addActionListener(e -> System.exit(0));
+            fileMenu.add(exitItem);
+
+            // View menu
+            JMenu viewMenu = new JMenu("View");
+            menuBar.add(viewMenu);
+            JMenuItem refreshItem = new JMenuItem("Refresh");
+            refreshItem.addActionListener(e -> updateDisplay());
+            viewMenu.add(refreshItem);
+
+            // Help menu
+            JMenu helpMenu = new JMenu("Help");
+            menuBar.add(helpMenu);
+            JMenuItem aboutItem = new JMenuItem("About");
+            aboutItem.addActionListener(e -> JOptionPane.showMessageDialog(frame, "Digimon World Simulator\nVersion 1.0", "About", JOptionPane.INFORMATION_MESSAGE));
+            helpMenu.add(aboutItem);
     
+            // Main panel (left side)
+            JPanel mainPanel = new JPanel(new GridBagLayout());
             GridBagConstraints gbc = new GridBagConstraints();
             gbc.fill = GridBagConstraints.BOTH;
             gbc.insets = new Insets(5, 5, 5, 5);
@@ -103,7 +130,7 @@ public class VisualGUI implements SimulationObserver {
             gbc.gridwidth = 3;
             gbc.weightx = 1.0;
             gbc.weighty = 0.2;
-            frame.add(worldInfoScrollPane, gbc);
+            mainPanel.add(worldInfoScrollPane, gbc);
     
             // Create sector panels
             JPanel sectorPanel = new JPanel(new GridLayout(0, 3, 10, 10));
@@ -119,7 +146,7 @@ public class VisualGUI implements SimulationObserver {
     
             gbc.gridy = 1;
             gbc.weighty = 0.6;
-            frame.add(sectorPanel, gbc);
+            mainPanel.add(sectorPanel, gbc);
     
             // Create event panels
             attackEventArea = createEventArea("Attack Events");
@@ -133,19 +160,19 @@ public class VisualGUI implements SimulationObserver {
     
             gbc.gridy = 2;
             gbc.weighty = 0.2;
-            frame.add(eventsPanel, gbc);
-
-            // Create tribe info panel
-            tribeInfoArea = new JTextArea(10, 50);
+            mainPanel.add(eventsPanel, gbc);
+    
+            // Add main panel to the left side of the frame
+            frame.add(mainPanel, BorderLayout.CENTER);
+    
+            // Create tribe info panel (right side)
+            tribeInfoArea = new JTextArea(10, 30);
             tribeInfoArea.setEditable(false);
             JScrollPane tribeInfoScrollPane = new JScrollPane(tribeInfoArea);
             tribeInfoScrollPane.setBorder(BorderFactory.createTitledBorder("Tribe Information"));
-
-            gbc.gridx = 0;
-            gbc.gridy = 3;
-            gbc.gridwidth = 3;
-            gbc.weighty = 0.2;
-            frame.add(tribeInfoScrollPane, gbc);
+    
+            // Add tribe info panel to the right side of the frame
+            frame.add(tribeInfoScrollPane, BorderLayout.EAST);
     
             frame.setVisible(true);
     
@@ -238,12 +265,7 @@ public class VisualGUI implements SimulationObserver {
                     tribeInfo.append(String.format("- %s (Leader: %s)\n", 
                         tribe.getName(), 
                         tribe.getLeader() != null ? tribe.getLeader().getName() : "None"));
-                    tribeInfo.append("  Members:\n");
-                    for (Digimon member : tribe.getMembers()) {
-                        tribeInfo.append(String.format("    %s (%s)\n", 
-                            member.getName(), 
-                            member.getStage()));
-                    }
+                    tribeInfo.append("  Members: ").append(tribe.getMembers().size()).append("\n");
                     tribeInfo.append("  Territory: ").append(tribe.getTechnologySystem().getTechnologyLevels()).append("\n");
                     tribeInfo.append("  Military: ").append(tribe.getMilitaryStrength()).append("\n");
                     tribeInfo.append("\n");

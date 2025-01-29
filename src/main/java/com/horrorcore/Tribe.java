@@ -67,7 +67,7 @@ public class Tribe {
 
             world.getTribes().add(newTribe);
 
-            Sector tribeSector = world.getSectors().parallelStream()
+            Sector tribeSector = world.getSectors().stream()
                     .filter(sector -> sector.getDigimons().contains(leader))
                     .findFirst()
                     .orElse(world.getSectors().get(0));

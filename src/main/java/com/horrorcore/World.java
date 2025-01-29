@@ -252,7 +252,7 @@ public class World {
                         }
 
                         if (digimon.getAge() <= 25 || digimon.getHealth() >= 15 && random.nextBoolean()) {
-                            Optional<Sector> targetSectorOptional = sector.getAdjacentSectors().parallelStream().findAny();
+                            Optional<Sector> targetSectorOptional = sector.getAdjacentSectors().stream().findAny();
                             if (targetSectorOptional.isPresent()) {
                                 sector.removeDigimon(digimon);
                                 Sector targetSector = targetSectorOptional.get();
@@ -328,18 +328,19 @@ public class World {
                 for (int i = 0; i < actualDeaths; i++) {
                     simulateRandomDeath();
                 }
-
-                SimulationSubject.getInstance().notifyWorldUpdate(this); // Use the passed GUI instance
-
-                time++;
                 List<Tribe> tribesToRemove = INSTANCE.getTribes().stream()
                     .filter(tribe -> tribe.getMembers().isEmpty())
                     .collect(Collectors.toList());
-                
+
                 if (!tribesToRemove.isEmpty()) {
                     Tribe.getAllTribes().removeAll(tribesToRemove);
+                    tribes.removeAll(tribesToRemove);
                     LOGGER.info("Removed " + tribesToRemove.size() + " empty tribes.");
                 }
+                tribes = Tribe.getAllTribes();
+                SimulationSubject.getInstance().notifyWorldUpdate(this); // Use the passed GUI instance
+
+                time++;
                 System.gc();
             } catch (InterruptedException e) {
                 LOGGER.log(Level.WARNING, "Simulation interrupted", e);
@@ -383,12 +384,16 @@ private void simulateRandomDeath() {
                         .orElse(null);
 
                     if (digimonSector != null) {
+                        if (digimon.getTribe()!= null) {
+                            digimon.leaveTribe();
+                        }
                         digimonSector.removeDigimon(digimon);
                         LOGGER.info(digimon.getName() + " has died in " + digimonSector.getName());
                         SimulationSubject.getInstance().notifyEvent(digimon.getName() + " has died in " + digimonSector.getName(), SimulationEvent.EventType.OTHER);
                     }
                 }
             }
+
         }
     }
 }

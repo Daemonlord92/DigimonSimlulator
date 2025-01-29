@@ -1,88 +1,92 @@
 package com.horrorcore;
 
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.stage.Stage;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class DigimonSimulator {
+public class DigimonSimulator extends Application {
     private static final Logger LOGGER = Logger.getLogger(DigimonSimulator.class.getName());
+    private static World world;
+    private static VisualGUI gui;
 
     public static void main(String[] args) {
-        World world = World.getInstance();
-        VisualGUI gui = VisualGUI.getInstance(world);
+        world = World.getInstance();
+        gui = VisualGUI.getInstance(world);
         LOGGER.info("Created VisualGUI instance: " + gui);
 
+        // Launch the JavaFX application
+        launch(args);
+    }
+
+    @Override
+    public void start(Stage primaryStage) {
         try {
             // Initialize the world first
-            if (world.isInitialized()) {
-                world.initialize();
-                LOGGER.info("World initialized with sectors: " + world.getSectors());
-
-                // Then initialize GUI
-                gui.initialize();
-
-                // Add Digimons
-                for (int i = 0; i < 100; i++) {
-                    Digimon digimon = DigimonGenerator.generateRandomDigimon();
-                    world.addDigimon(digimon);
-                    LOGGER.info("Added Digimon: " + digimon.getName());
-                }
-
-                for(int i = 0; i < 10; i++) {
-                    CelestialDigimon celestialDigimon = DigimonGenerator.generateCelestialDigimon();
-                    world.addDigimon(celestialDigimon);
-                    assert celestialDigimon != null;
-                    LOGGER.info("Added Celestial Digimon: " + celestialDigimon.getName());
-                }
-            } else {
-                LOGGER.info("World is already initialized and filled with Digimons.");
+            // Replace the if (!world.isInitialized()) block with:
+            world.initialize();
+            LOGGER.info("World initialized with sectors: " + world.getSectors());
+            
+            // Add Digimons
+            for (int i = 0; i < 100; i++) {
+                Digimon digimon = DigimonGenerator.generateRandomDigimon();
+                world.addDigimon(digimon);
+                LOGGER.info("Added Digimon: " + digimon.getName());
             }
+            
+            for(int i = 0; i < 10; i++) {
+                CelestialDigimon celestialDigimon = DigimonGenerator.generateCelestialDigimon();
+                world.addDigimon(celestialDigimon);
+                assert celestialDigimon != null;
+                LOGGER.info("Added Celestial Digimon: " + celestialDigimon.getName());
+            }
+            gui.initialize();
+            // Initialize GUI
+            gui.start(primaryStage);
+    
+            LOGGER.info("GUI initialized and started");
 
-            ExecutorService executor = Executors.newCachedThreadPool();
-
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                LOGGER.info("Shutting down...");
-                executor.shutdownNow();
+            // Start the simulation in a separate thread
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.submit(() -> {
                 try {
-                    if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                        LOGGER.warning("Executor did not terminate in the specified time.");
-                    }
-                } catch (InterruptedException e) {
-                    LOGGER.log(Level.SEVERE, "Shutdown interrupted", e);
-                }
-                gui.shutdown();
-            }));
-
-            final long TIMEOUT_SECONDS = 30000; // Adjust this value as needed
-
-
-            while (true) {
-                final Future<?> future = executor.submit(() -> {
-                    try {
+                    while (true) {
                         world.simulate(gui);
-                        SimulationSubject.getInstance().notifyWorldUpdate(world);
-                    } catch (Exception e) {
-                        LOGGER.log(Level.SEVERE, "Simulation failed", e);
+                        LOGGER.info("World simulated. Current time: " + world.getTime());
+                        LOGGER.info("Number of sectors: " + world.getSectors().size());
+                        int totalDigimons = world.getSectors().stream()
+                                                .mapToInt(sector -> sector.getDigimons().size())
+                                                .sum();
+                        LOGGER.info("Total Digimons: " + totalDigimons);
+                        
+                        // Update GUI on JavaFX Application Thread
+                        Platform.runLater(() -> {
+                            gui.updateWorldInfo(world);
+                            gui.updateSectorInfo(world.getSectors());
+                            SimulationSubject.getInstance().notifyWorldUpdate(world);
+                            LOGGER.info("GUI updated");
+                        });
+                        
+                        Thread.sleep(1000); // Increased sleep time for easier observation
                     }
-                }, "Simulation Thread");
-
-                try {
-                    future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-                    break; // Simulation completed successfully
-                } catch (TimeoutException e) {
-                    LOGGER.warning("Potential lock detected. Attempting to restart simulation.");
-                    future.cancel(true);
-                    world.saveState(); // Assuming you have a method to save the world state
-                    world.reset(); // Assuming you have a method to reset the world
-                    world.loadState();// Assuming you have a method to load the saved state
                 } catch (Exception e) {
                     LOGGER.log(Level.SEVERE, "Simulation failed", e);
-                    break;
                 }
-            }
+            });
+    
+            // Shutdown hook
+            primaryStage.setOnCloseRequest(event -> {
+                LOGGER.info("Shutting down...");
+                executor.shutdownNow();
+                gui.shutdown();
+                Platform.exit();
+            });
+    
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failed to initialize the simulator", e);
-            System.exit(1);
+            Platform.exit();
         }
     }
 }

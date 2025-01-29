@@ -1,8 +1,12 @@
 package com.horrorcore;
 
-import javax.swing.*;
-import java.awt.*;
-import java.util.ArrayList;
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.stage.Stage;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,48 +16,29 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class VisualGUI implements SimulationObserver {
+public class VisualGUI extends Application implements SimulationObserver {
     private static final int MAX_EVENTS = 20;
     private static final int UPDATE_INTERVAL_MS = 100; // Update every 100ms
     private static VisualGUI instance;
     private World world;
-    private JFrame frame;
-    private static Map<String, JTextArea> sectorPanels;
-    private JTextArea worldInfoArea;
-    private JTextArea outputArea;
-    private JTextArea attackEventArea;
-    private JTextArea politicalEventArea;
-    private JTextArea tribeInfoArea;
-    private JTextArea otherEventArea;
+    private Stage primaryStage;
+    private static Map<String, TextArea> sectorPanels;
+    private TextArea worldInfoArea;
+    private TextArea attackEventArea;
+    private TextArea politicalEventArea;
+    private TextArea tribeInfoArea;
+    private TextArea otherEventArea;
     private ScheduledExecutorService executor;
     private final ReadWriteLock worldLock = new ReentrantReadWriteLock();
     private boolean initialized = false;
     private int lastClearTime = 0;
 
-    /**
-     * Private constructor for the VisualGUI class.
-     * This constructor initializes the VisualGUI with the given World object,
-     * creates a new HashMap for sector panels, and sets up a single-threaded
-     * scheduled executor service.
-     *
-     * @param world The World object representing the current state of the Digimon world.
-     *              This world object is used to populate and update the GUI with relevant information.
-     */
     private VisualGUI(World world) {
         this.world = world;
         this.sectorPanels = new HashMap<>();
         this.executor = Executors.newSingleThreadScheduledExecutor();
     }
 
-    /**
-     * Returns the singleton instance of the VisualGUI class.
-     * If the instance doesn't exist, it creates a new one with the given World object.
-     * This method ensures that only one instance of VisualGUI is created and used throughout the application.
-     *
-     * @param world The World object representing the current state of the Digimon world.
-     *              This is used to initialize the VisualGUI if it hasn't been created yet.
-     * @return The singleton instance of VisualGUI.
-     */
     public static VisualGUI getInstance(World world) {
         if (instance == null) {
             instance = new VisualGUI(world);
@@ -61,133 +46,126 @@ public class VisualGUI implements SimulationObserver {
         return instance;
     }
 
-    /**
-     * Initializes the Visual GUI for the Digimon World Simulator.
-     * This method sets up the main frame, creates panels for world information and sectors,
-     * and initializes event areas for attack, political, and other events.
-     * It also starts periodic updates for the GUI.
-     * 
-     * The method uses SwingUtilities.invokeLater to ensure that GUI operations
-     * are performed on the Event Dispatch Thread.
-     * 
-     * If the GUI has already been initialized, this method will log a message and return
-     * without performing any further actions.
-     * 
-     * This method does not take any parameters and does not return any value.
-     * Its effects are visible through the creation and display of GUI components.
-     */
+    @Override
+    public void start(Stage primaryStage) {
+        this.primaryStage = primaryStage;
+        initialize();
+    }
+
     public void initialize() {
         if (initialized) {
             System.out.println("VisualGUI already initialized. Skipping initialization.");
             return;
         }
-        
-        SwingUtilities.invokeLater(() -> {
-            frame = new JFrame("Digimon World Simulator");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(1440, 1020);
-            frame.setLayout(new BorderLayout());
+
+        Platform.runLater(() -> {
+            primaryStage.setTitle("Digimon World Simulator");
+
+            BorderPane root = new BorderPane();
 
             // Create menu bar
-            JMenuBar menuBar = new JMenuBar();
-            frame.setJMenuBar(menuBar);
+            MenuBar menuBar = new MenuBar();
+            Menu fileMenu = new Menu("File");
+            MenuItem exitItem = new MenuItem("Exit");
+            exitItem.setOnAction(e -> System.exit(0));
+            fileMenu.getItems().add(exitItem);
 
-            // File menu
-            JMenu fileMenu = new JMenu("File");
-            menuBar.add(fileMenu);
-            JMenuItem exitItem = new JMenuItem("Exit");
-            exitItem.addActionListener(e -> System.exit(0));
-            fileMenu.add(exitItem);
+            Menu viewMenu = new Menu("View");
+            MenuItem refreshItem = new MenuItem("Refresh");
+            refreshItem.setOnAction(e -> updateDisplay());
+            viewMenu.getItems().add(refreshItem);
 
-            // View menu
-            JMenu viewMenu = new JMenu("View");
-            menuBar.add(viewMenu);
-            JMenuItem refreshItem = new JMenuItem("Refresh");
-            refreshItem.addActionListener(e -> updateDisplay());
-            viewMenu.add(refreshItem);
+            Menu helpMenu = new Menu("Help");
+            MenuItem aboutItem = new MenuItem("About");
+            aboutItem.setOnAction(e -> showAboutDialog());
+            helpMenu.getItems().add(aboutItem);
 
-            // Help menu
-            JMenu helpMenu = new JMenu("Help");
-            menuBar.add(helpMenu);
-            JMenuItem aboutItem = new JMenuItem("About");
-            aboutItem.addActionListener(e -> JOptionPane.showMessageDialog(frame, "Digimon World Simulator\nVersion 1.0", "About", JOptionPane.INFORMATION_MESSAGE));
-            helpMenu.add(aboutItem);
-    
-            // Main panel (left side)
-            JPanel mainPanel = new JPanel(new GridBagLayout());
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.fill = GridBagConstraints.BOTH;
-            gbc.insets = new Insets(5, 5, 5, 5);
-    
-            // Create world info panel
-            worldInfoArea = new JTextArea(5, 50);
+            menuBar.getMenus().addAll(fileMenu, viewMenu, helpMenu);
+
+            // Main panel (center)
+            VBox mainPanel = new VBox(10);
+            mainPanel.setPadding(new Insets(10));
+
+            // World info area
+            worldInfoArea = new TextArea();
             worldInfoArea.setEditable(false);
-            JScrollPane worldInfoScrollPane = new JScrollPane(worldInfoArea);
-            worldInfoScrollPane.setBorder(BorderFactory.createTitledBorder("World Information"));
-    
-            gbc.gridx = 0;
-            gbc.gridy = 0;
-            gbc.gridwidth = 3;
-            gbc.weightx = 1.0;
-            gbc.weighty = 0.2;
-            mainPanel.add(worldInfoScrollPane, gbc);
-    
-            // Create sector panels
-            JPanel sectorPanel = new JPanel(new GridLayout(0, 3, 10, 10));
+            worldInfoArea.setPrefRowCount(5);
+            TitledPane worldInfoPane = new TitledPane("World Information", worldInfoArea);
+            worldInfoPane.setCollapsible(false);
+
+            // Sector panels
+            GridPane sectorPanel = new GridPane();
+            sectorPanel.setHgap(10);
+            sectorPanel.setVgap(10);
+            int col = 0, row = 0;
             for (Sector sector : world.getSectors()) {
                 String sectorName = sector.getName();
-                JTextArea sectorArea = new JTextArea();
+                TextArea sectorArea = new TextArea();
                 sectorArea.setEditable(false);
+                sectorArea.setPrefRowCount(5);
+                sectorArea.setPrefColumnCount(20);
                 sectorPanels.put(sectorName, sectorArea);
-                JScrollPane scrollPane = new JScrollPane(sectorArea);
-                scrollPane.setBorder(BorderFactory.createTitledBorder(sectorName));
-                sectorPanel.add(scrollPane);
+                TitledPane sectorPane = new TitledPane(sectorName, sectorArea);
+                sectorPane.setCollapsible(false);
+                sectorPanel.add(sectorPane, col, row);
+                if (++col == 3) {
+                    col = 0;
+                    row++;
+                }
             }
-    
-            gbc.gridy = 1;
-            gbc.weighty = 0.6;
-            mainPanel.add(sectorPanel, gbc);
-    
-            // Create event panels
+
+            // Event areas
             attackEventArea = createEventArea("Attack Events");
             politicalEventArea = createEventArea("Political Events");
             otherEventArea = createEventArea("Other Events");
-    
-            JPanel eventsPanel = new JPanel(new GridLayout(1, 3, 10, 10));
-            eventsPanel.add(new JScrollPane(attackEventArea));
-            eventsPanel.add(new JScrollPane(politicalEventArea));
-            eventsPanel.add(new JScrollPane(otherEventArea));
-    
-            gbc.gridy = 2;
-            gbc.weighty = 0.2;
-            mainPanel.add(eventsPanel, gbc);
-    
-            // Add main panel to the left side of the frame
-            frame.add(mainPanel, BorderLayout.CENTER);
-    
-            // Create tribe info panel (right side)
-            tribeInfoArea = new JTextArea(10, 30);
+
+            HBox eventsPanel = new HBox(10);
+            eventsPanel.getChildren().addAll(
+                new TitledPane("Attack Events", attackEventArea),
+                new TitledPane("Political Events", politicalEventArea),
+                new TitledPane("Other Events", otherEventArea)
+            );
+
+            mainPanel.getChildren().addAll(worldInfoPane, sectorPanel, eventsPanel);
+
+            // Tribe info area (right)
+            tribeInfoArea = new TextArea();
             tribeInfoArea.setEditable(false);
-            JScrollPane tribeInfoScrollPane = new JScrollPane(tribeInfoArea);
-            tribeInfoScrollPane.setBorder(BorderFactory.createTitledBorder("Tribe Information"));
-    
-            // Add tribe info panel to the right side of the frame
-            frame.add(tribeInfoScrollPane, BorderLayout.EAST);
-    
-            frame.setVisible(true);
-    
+            TitledPane tribeInfoPane = new TitledPane("Tribe Information", tribeInfoArea);
+            tribeInfoPane.setCollapsible(false);
+
+            root.setTop(menuBar);
+            root.setCenter(mainPanel);
+            root.setRight(tribeInfoPane);
+
+            Scene scene = new Scene(root, 1440, 1020);
+            primaryStage.setScene(scene);
+            primaryStage.show();
+
             // Start periodic updates
             startPeriodicUpdates();
         });
+
+        // Ensure initial update
+        updateDisplay();
+
         SimulationSubject.getInstance().addObserver(this);
         initialized = true;
     }
-    
-    private JTextArea createEventArea(String title) {
-        JTextArea area = new JTextArea();
+
+    private TextArea createEventArea(String title) {
+        TextArea area = new TextArea();
         area.setEditable(false);
-        area.setBorder(BorderFactory.createTitledBorder(title));
+        area.setPrefRowCount(10);
         return area;
+    }
+
+    private void showAboutDialog() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("About");
+        alert.setHeaderText(null);
+        alert.setContentText("Digimon World Simulator\nVersion 1.0");
+        alert.showAndWait();
     }
 
     private void startPeriodicUpdates() {
@@ -195,41 +173,25 @@ public class VisualGUI implements SimulationObserver {
     }
 
     private void updateDisplayAsync() {
-        SwingUtilities.invokeLater(this::updateDisplay);
+        Platform.runLater(this::updateDisplay);
     }
 
-    /**
-     * Updates the display of the Digimon World Simulator GUI.
-     * This method refreshes the information for each sector, including the list of Digimons,
-     * and updates the world information panel with current statistics.
-     * The method is designed to be run on the Event Dispatch Thread using SwingUtilities.invokeLater.
-     * It uses a read lock to ensure thread-safe access to the world data.
-     *
-     * The method performs the following tasks:
-     * 1. Updates each sector's panel with the current list of Digimons and their status.
-     * 2. Calculates and displays the total number of Digimons and tribes across all sectors.
-     * 3. Shows the current time, technology age, and time until the next technology age.
-     * 4. Handles potential null references for sectors or Digimons, logging warnings as necessary.
-     *
-     * This method does not take any parameters and does not return any value.
-     * Its effects are visible through updates to the GUI components.
-     */
     public void updateDisplay() {
-        SwingUtilities.invokeLater(() -> {
+        Platform.runLater(() -> {
             worldLock.readLock().lock();
             try {
+                // Update sector panels
                 for (Sector sector : world.getSectors()) {
                     String sectorName = sector.getName();
-                    JTextArea sectorArea = sectorPanels.get(sectorName);
+                    TextArea sectorArea = sectorPanels.get(sectorName);
                     if (sectorArea == null) {
-                        System.err.println("Warning: No JTextArea found for sector: " + sectorName);
+                        System.err.println("Warning: No TextArea found for sector: " + sectorName);
                         continue;
                     }
                     StringBuilder sectorInfo = new StringBuilder();
                     sectorInfo.append("Digimons in ").append(sectorName).append(":\n");
                     
-                    List<Digimon> digimonsCopy = new ArrayList<>(sector.getDigimons());
-                    for (Digimon digimon : digimonsCopy) {
+                    for (Digimon digimon : sector.getDigimons()) {
                         if (digimon == null) {
                             System.err.println("Warning: Null Digimon found in sector: " + sectorName);
                             continue;
@@ -237,26 +199,28 @@ public class VisualGUI implements SimulationObserver {
                         sectorInfo.append(digimon.getStatusString()).append("\n");
                     }
                     sectorArea.setText(sectorInfo.toString());
-                    int totalDigimon = world.getSectors().stream()
-                            .mapToInt(s -> s.getDigimons().size())
-                            .sum();
-                    int timeToNextTechAge = world.getTimeToNextAge();
-                    int totalBuildings = world.getBuildings();
-                    worldInfoArea.setText(String.format(
-                            "Time: %d\n" +
-                                    "Technology Age: %s\n" +
-                                    "Total Digimon: %d\n" +
-                                    "Total Tribes: %d\n" +
-                                    "Time To Next Tech Age: %d\n" +
-                                    "Total Buildings: %d\n",
-                            world.getTime(),
-                            world.getTechnologySystem().getCurrentAge(),
-                            totalDigimon,
-                            Tribe.getAllTribes().size(),
-                            timeToNextTechAge,
-                            totalBuildings
-                    ));
                 }
+
+                // Update world info
+                int totalDigimon = world.getSectors().stream()
+                        .mapToInt(s -> s.getDigimons().size())
+                        .sum();
+                int timeToNextTechAge = world.getTimeToNextAge();
+                int totalBuildings = world.getBuildings();
+                worldInfoArea.setText(String.format(
+                        "Time: %d\n" +
+                                "Technology Age: %s\n" +
+                                "Total Digimon: %d\n" +
+                                "Total Tribes: %d\n" +
+                                "Time To Next Tech Age: %d\n" +
+                                "Total Buildings: %d\n",
+                        world.getTime(),
+                        world.getTechnologySystem().getCurrentAge(),
+                        totalDigimon,
+                        Tribe.getAllTribes().size(),
+                        timeToNextTechAge,
+                        totalBuildings
+                ));
 
                 // Update tribe information
                 StringBuilder tribeInfo = new StringBuilder();
@@ -278,8 +242,8 @@ public class VisualGUI implements SimulationObserver {
     }
 
     public void addEvent(String event, EventType type) {
-        SwingUtilities.invokeLater(() -> {
-            JTextArea targetArea;
+        Platform.runLater(() -> {
+            TextArea targetArea;
             int currentTime = world.getTime();
             if (currentTime - lastClearTime >= 25) {
                 clearAllEvents();
@@ -298,31 +262,74 @@ public class VisualGUI implements SimulationObserver {
                     break;
             }
 
-            // Check if it's time to clear events
-
-
             String[] events = targetArea.getText().split("\n");
             StringBuilder newEvents = new StringBuilder();
 
-            // Add the new event at the top
             newEvents.append(event).append("\n");
 
-            // Add the existing events, keeping only the most recent ones
             int endIndex = Math.min(events.length, MAX_EVENTS - 1);
             for (int i = 0; i < endIndex; i++) {
                 newEvents.append(events[i]).append("\n");
             }
 
             targetArea.setText(newEvents.toString());
-            targetArea.setCaretPosition(0); // Set caret to the top
+            targetArea.positionCaret(0);
         });
     }
 
     private void clearAllEvents() {
-        SwingUtilities.invokeLater(() -> {
-            attackEventArea.setText("");
-            politicalEventArea.setText("");
-            otherEventArea.setText("");
+        Platform.runLater(() -> {
+            attackEventArea.clear();
+            politicalEventArea.clear();
+            otherEventArea.clear();
+        });
+    }
+
+    public void updateWorldInfo(World world) {
+        Platform.runLater(() -> {
+            int totalDigimon = world.getSectors().stream()
+                    .mapToInt(s -> s.getDigimons().size())
+                    .sum();
+            int timeToNextTechAge = world.getTimeToNextAge();
+            int totalBuildings = world.getBuildings();
+            worldInfoArea.setText(String.format(
+                    "Time: %d\n" +
+                            "Technology Age: %s\n" +
+                            "Total Digimon: %d\n" +
+                            "Total Tribes: %d\n" +
+                            "Time To Next Tech Age: %d\n" +
+                            "Total Buildings: %d\n",
+                    world.getTime(),
+                    world.getTechnologySystem().getCurrentAge(),
+                    totalDigimon,
+                    Tribe.getAllTribes().size(),
+                    timeToNextTechAge,
+                    totalBuildings
+            ));
+        });
+    }
+
+    public void updateSectorInfo(List<Sector> sectors) {
+        Platform.runLater(() -> {
+            for (Sector sector : sectors) {
+                String sectorName = sector.getName();
+                TextArea sectorArea = sectorPanels.get(sectorName);
+                if (sectorArea == null) {
+                    System.err.println("Warning: No TextArea found for sector: " + sectorName);
+                    continue;
+                }
+                StringBuilder sectorInfo = new StringBuilder();
+                sectorInfo.append("Digimons in ").append(sectorName).append(":\n");
+
+                for (Digimon digimon : sector.getDigimons()) {
+                    if (digimon == null) {
+                        System.err.println("Warning: Null Digimon found in sector: " + sectorName);
+                        continue;
+                    }
+                    sectorInfo.append(digimon.getStatusString()).append("\n");
+                }
+                sectorArea.setText(sectorInfo.toString());
+            }
         });
     }
 

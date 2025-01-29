@@ -341,6 +341,7 @@ public class World {
                 SimulationSubject.getInstance().notifyWorldUpdate(this); // Use the passed GUI instance
 
                 time++;
+                    LOGGER.info("World simulated. Time: " + time + ", Tech Age: " + technologySystem.getCurrentAge());
                 System.gc();
             } catch (InterruptedException e) {
                 LOGGER.log(Level.WARNING, "Simulation interrupted", e);
@@ -397,6 +398,7 @@ private void simulateRandomDeath() {
         }
     }
 }
+
 
 private boolean shouldDigimonDie(Digimon digimon) {
     int baseDeathChance = 1; // Reduced from 5% to 1% base chance of death

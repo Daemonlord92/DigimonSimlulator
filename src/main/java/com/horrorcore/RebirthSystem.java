@@ -15,7 +15,7 @@ public class RebirthSystem {
         for (int i = 0; i < digimonList.size(); i++) {
             Digimon digimon = digimonList.get(i);
             if (digimon.getHealth() <= 0) {
-                VisualGUI.getInstance(null).addEvent(digimon.getName() + " has died and will be reborn!", VisualGUI.EventType.OTHER);
+                SimulationSubject.getInstance().notifyEvent(digimon.getName() + " has died and will be reborn!", SimulationEvent.EventType.OTHER);
                 Digimon rebornDigimon;
                 if (!digimon.getStage().equals("Rookie") || !digimon.getStage().equals("In-Training")) {
                     rebornDigimon = DigimonGenerator.generateRebirthDigimon();
@@ -30,7 +30,7 @@ public class RebirthSystem {
                 }
 
                 digimonList.set(i, rebornDigimon);
-                VisualGUI.getInstance(null).addEvent(rebornDigimon.getName() + " has been reborn as a Baby!", VisualGUI.EventType.OTHER);
+                SimulationSubject.getInstance().notifyEvent(rebornDigimon.getName() + " has been reborn as a Baby!", SimulationEvent.EventType.OTHER);
             }
         }
     }

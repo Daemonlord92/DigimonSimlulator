@@ -70,7 +70,7 @@ public class Digimon {
                 default -> 10;
             };
             target.health -= damage;
-            VisualGUI.getInstance(null).addEvent(this.name + " attacked " + target.name + "!", VisualGUI.EventType.ATTACK);
+            SimulationSubject.getInstance().notifyEvent(this.name + " attacked " + target.name + "!", SimulationEvent.EventType.ATTACK);
         }
     }
 
@@ -82,14 +82,14 @@ public class Digimon {
             if (tribe.getName().equals(tribeName)) {
                 this.tribe = tribe;
                 tribe.getMembers().add(this);
-                VisualGUI.getInstance(null).addEvent(this.name + " joined the " + tribeName + " tribe.", VisualGUI.EventType.POLITICAL);
+                SimulationSubject.getInstance().notifyEvent(this.name + " joined the " + tribeName + " tribe.", SimulationEvent.EventType.POLITICAL);
                 break;
             }
         }
     }
 
     public void evolve(String newName, String newStage) {
-        VisualGUI.getInstance(null).addEvent(this.name + " is evolving to " + newStage + " stage!", VisualGUI.EventType.OTHER);
+        SimulationSubject.getInstance().notifyEvent(this.name + " is evolving to " + newStage + " stage!", SimulationEvent.EventType.OTHER);
 
         this.name = newName;
         this.stage = newStage;
@@ -100,10 +100,10 @@ public class Digimon {
             case "Champion" -> { this.health += 40; this.aggression += 20; }
             case "Ultimate" -> { this.health += 60; this.aggression += 30; }
             case "Mega" -> { this.health += 80; this.aggression += 40; }
-            default -> VisualGUI.getInstance(null).addEvent("Unknown stage: " + newStage, VisualGUI.EventType.OTHER);
+            default -> SimulationSubject.getInstance().notifyEvent("Unknown stage: " + newStage, SimulationEvent.EventType.OTHER);
         }
 
-        VisualGUI.getInstance(null).addEvent(this.name + " has evolved to " + this.stage + " stage!", VisualGUI.EventType.OTHER);
+        SimulationSubject.getInstance().notifyEvent(this.name + " has evolved to " + this.stage + " stage!", SimulationEvent.EventType.OTHER);
     }
 
 

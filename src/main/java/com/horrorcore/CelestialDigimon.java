@@ -24,24 +24,24 @@ public class CelestialDigimon extends Digimon {
     public void attack(Digimon target) {
         if (isTargetMassKiller(target)) {
             super.attack(target);
-            VisualGUI.getInstance(null).addEvent(
+            SimulationSubject.getInstance().notifyEvent(
                     getName() + " has judged " + target.getName() + " for their crimes!",
-                    VisualGUI.EventType.ATTACK
+                    SimulationEvent.EventType.ATTACK
             );
         }
     }
 
     private boolean isTargetMassKiller(Digimon target) {
-        return target.getAggression() > 80;
+        return target.getAggression() > 750;
     }
 
     public void provideFood(List<Digimon> digimons) {
         for (Digimon digimon : digimons) {
             digimon.setHunger(Math.max(0, digimon.getHunger() - 30));
         }
-        VisualGUI.getInstance(null).addEvent(
+        SimulationSubject.getInstance().notifyEvent(
                 getName() + " has provided food to nearby Digimon",
-                VisualGUI.EventType.OTHER
+                SimulationEvent.EventType.OTHER
         );
     }
 
@@ -49,9 +49,9 @@ public class CelestialDigimon extends Digimon {
         for (Digimon digimon : digimons) {
             digimon.setHealth(Math.min(100, digimon.getHealth() + 20));
         }
-        VisualGUI.getInstance(null).addEvent(
+        SimulationSubject.getInstance().notifyEvent(
                 getName() + " has healed nearby Digimon",
-                VisualGUI.EventType.OTHER
+                SimulationEvent.EventType.OTHER
         );
     }
 

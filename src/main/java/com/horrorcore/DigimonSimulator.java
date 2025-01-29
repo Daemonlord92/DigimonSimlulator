@@ -60,6 +60,7 @@ public class DigimonSimulator {
                 final Future<?> future = executor.submit(() -> {
                     try {
                         world.simulate(gui);
+                        SimulationSubject.getInstance().notifyWorldUpdate(world);
                     } catch (Exception e) {
                         LOGGER.log(Level.SEVERE, "Simulation failed", e);
                     }

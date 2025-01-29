@@ -16,7 +16,7 @@ public class BirthSystem {
         if (random.nextInt(100) < 10) { // 10% chance of a new Digimon being born
             Digimon newDigimon = DigimonGenerator.generateRebirthDigimon();
             digimonList.add(newDigimon);
-            VisualGUI.getInstance(null).addEvent("A new Digimon, " + newDigimon.getName() + ", has been born!", VisualGUI.EventType.OTHER);
+            SimulationSubject.getInstance().notifyEvent("A new Digimon, " + newDigimon.getName() + ", has been born!", SimulationEvent.EventType.OTHER);
         }
     }
 }

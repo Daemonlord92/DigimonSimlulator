@@ -29,16 +29,16 @@ public class EventSystem {
         switch (eventType) {
             case 0:
                 String politicalEvent = POLITICAL_EVENTS[random.nextInt(POLITICAL_EVENTS.length)];
-                VisualGUI.getInstance(null).addEvent("Political Event: " + politicalEvent, VisualGUI.EventType.POLITICAL);
+                SimulationSubject.getInstance().notifyEvent("Political Event: " + politicalEvent, SimulationEvent.EventType.POLITICAL);
                 handlePoliticalEvent(world, politicalEvent);
                 break;
             case 1:
                 String naturalEvent = NATURAL_EVENTS[random.nextInt(NATURAL_EVENTS.length)];
-                VisualGUI.getInstance(null).addEvent("Natural Event: " + naturalEvent, VisualGUI.EventType.OTHER);
+                SimulationSubject.getInstance().notifyEvent("Natural Event: " + naturalEvent, SimulationEvent.EventType.OTHER);
                 handleNaturalEvent(world, naturalEvent);
                 break;
             case 2:
-                VisualGUI.getInstance(null).addEvent("Healing Event: A mysterious force heals all Digimon!", VisualGUI.EventType.OTHER);
+                SimulationSubject.getInstance().notifyEvent("Healing Event: A mysterious force heals all Digimon!", SimulationEvent.EventType.OTHER);
                 world.getSectors().stream()
                         .flatMap(sector -> sector.getDigimons().stream())
                         .forEach(digimon -> digimon.setHealth(100));
@@ -107,7 +107,7 @@ public class EventSystem {
                     Tribe tribe1 = tribes.get(random.nextInt(tribes.size()));
                     Tribe tribe2 = tribes.get(random.nextInt(tribes.size()));
                     if (tribe1 != tribe2) {
-                        VisualGUI.getInstance(null).addEvent("Trade agreement formed between " + tribe1.getName() + " and " + tribe2.getName(), VisualGUI.EventType.POLITICAL);
+                        SimulationSubject.getInstance().notifyEvent("Trade agreement formed between " + tribe1.getName() + " and " + tribe2.getName(), SimulationEvent.EventType.POLITICAL);
                         world.getSectors().stream()
                                 .flatMap(sector -> sector.getDigimons().stream())
                                 .forEach(digimon -> {
@@ -125,7 +125,7 @@ public class EventSystem {
                     Tribe tribe1 = tribes.get(random.nextInt(tribes.size()));
                     Tribe tribe2 = tribes.get(random.nextInt(tribes.size()));
                     if (tribe1 != tribe2) {
-                        VisualGUI.getInstance(null).addEvent("Cultural exchange initiated between " + tribe1.getName() + " and " + tribe2.getName(), VisualGUI.EventType.POLITICAL);
+                        SimulationSubject.getInstance().notifyEvent("Cultural exchange initiated between " + tribe1.getName() + " and " + tribe2.getName(), SimulationEvent.EventType.POLITICAL);
                         // Implement cultural exchange effects
                     }
                 }
@@ -133,7 +133,7 @@ public class EventSystem {
             case "Diplomatic Mission":
                 if (!tribes.isEmpty()) {
                     Tribe tribe = tribes.get(random.nextInt(tribes.size()));
-                    VisualGUI.getInstance(null).addEvent(tribe.getName() + " has sent out a diplomatic mission", VisualGUI.EventType.POLITICAL);
+                    SimulationSubject.getInstance().notifyEvent(tribe.getName() + " has sent out a diplomatic mission", SimulationEvent.EventType.POLITICAL);
                     // Implement diplomatic mission effects
                     tribes.parallelStream()
                             .flatMap(sTribe -> sTribe.getMembers().parallelStream())
@@ -149,7 +149,7 @@ public class EventSystem {
                     Tribe spyingTribe = tribes.get(random.nextInt(tribes.size()));
                     Tribe targetTribe = tribes.get(random.nextInt(tribes.size()));
                     if (spyingTribe != targetTribe) {
-                        VisualGUI.getInstance(null).addEvent(spyingTribe.getName() + " is spying on " + targetTribe.getName(), VisualGUI.EventType.POLITICAL);
+                        SimulationSubject.getInstance().notifyEvent(spyingTribe.getName() + " is spying on " + targetTribe.getName(), SimulationEvent.EventType.POLITICAL);
                         // Implement espionage effects
 
                     }
@@ -167,7 +167,7 @@ public class EventSystem {
                         Digimon convertedDigimon = unaffiliatedDigimon.get(random.nextInt(unaffiliatedDigimon.size()));
                         convertingTribe.addMember(convertedDigimon);
                         Politics.convertDigimon(convertedDigimon, convertingTribe);
-                        VisualGUI.getInstance(null).addEvent(convertedDigimon.getName() + " has been converted to " + convertingTribe.getName(), VisualGUI.EventType.POLITICAL);
+                        SimulationSubject.getInstance().notifyEvent(convertedDigimon.getName() + " has been converted to " + convertingTribe.getName(), SimulationEvent.EventType.POLITICAL);
 
                         // Increase loyalty and decrease aggression of the converted Digimon
                         convertedDigimon.setAggression(Math.max(0, convertedDigimon.getAggression() - 25));
@@ -180,7 +180,7 @@ public class EventSystem {
                     Tribe tribe1 = tribes.get(random.nextInt(tribes.size()));
                     Tribe tribe2 = tribes.get(random.nextInt(tribes.size()));
 
-                    VisualGUI.getInstance(null).addEvent(tribe1.getName() + " and " + tribe2.getName() + " have made peace", VisualGUI.EventType.POLITICAL);
+                    SimulationSubject.getInstance().notifyEvent(tribe1.getName() + " and " + tribe2.getName() + " have made peace", SimulationEvent.EventType.POLITICAL);
 
                     // Decrease aggression and increase happiness for both tribes
                     Stream.concat(tribe1.getMembers().stream(), tribe2.getMembers().stream())
@@ -195,7 +195,7 @@ public class EventSystem {
                 case "Build City":
                     Tribe tribe = tribes.stream().findAny().orElse(null);
                     if (tribe!= null) {
-                        VisualGUI.getInstance(null).addEvent(tribe.getName() + " has built a city", VisualGUI.EventType.POLITICAL);
+                        SimulationSubject.getInstance().notifyEvent(tribe.getName() + " has built a city", SimulationEvent.EventType.POLITICAL);
                         Tribe.buildCity(tribe);
                     }
                     break;
@@ -224,29 +224,29 @@ public class EventSystem {
                 case "Food Shortage":
                     digimon.setAggression(digimon.getAggression() + 25);
                     digimon.setHunger(digimon.getHunger() + 30);
-                    VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a food shortage", VisualGUI.EventType.OTHER);
+                    SimulationSubject.getInstance().notifyEvent(digimon.getName() + " has been affected by a food shortage", SimulationEvent.EventType.OTHER);
                     break;
                 case "Plague":
                     digimon.setHunger(digimon.getHunger() + 10);
                     digimon.setAggression(digimon.getAggression() + 10);
                     digimon.setHealth(digimon.getHealth() - 20);
-                    VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a plague", VisualGUI.EventType.OTHER);
+                    SimulationSubject.getInstance().notifyEvent(digimon.getName() + " has been affected by a plague", SimulationEvent.EventType.OTHER);
                     break;
                 case "Storm":
                     digimon.setHealth(digimon.getHealth() - 15);
-                    VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by a storm", VisualGUI.EventType.OTHER);
+                    SimulationSubject.getInstance().notifyEvent(digimon.getName() + " has been affected by a storm", SimulationEvent.EventType.OTHER);
                     break;
                 case "Earthquake":
                     digimon.setHealth(digimon.getHealth() - 25);
                     digimon.setAggression(digimon.getAggression() + 15);
-                    VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been affected by an earthquake", VisualGUI.EventType.OTHER);
+                    SimulationSubject.getInstance().notifyEvent(digimon.getName() + " has been affected by an earthquake", SimulationEvent.EventType.OTHER);
                     break;
                 case "Mass Birth":
                     for (int i = 0; i < random.nextInt(100); i++) {
                         world.getSectors().stream().findAny().orElse(world.getSectors().get(random.nextInt(world.getSectors().size())))
                                 .getDigimons().add(DigimonGenerator.generateRandomDigimon());
                     }
-                    VisualGUI.getInstance(null).addEvent("A mass birth event has occurred!", VisualGUI.EventType.OTHER);
+                    SimulationSubject.getInstance().notifyEvent("A mass birth event has occurred!", SimulationEvent.EventType.OTHER);
                     return; // This will exit the method immediately after handling Mass Birth
             }
         }

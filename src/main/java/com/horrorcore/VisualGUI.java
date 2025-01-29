@@ -2,8 +2,6 @@ package com.horrorcore;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class VisualGUI {
+public class VisualGUI implements SimulationObserver {
     private static final int MAX_EVENTS = 20;
     private static final int UPDATE_INTERVAL_MS = 100; // Update every 100ms
     private static VisualGUI instance;
@@ -154,7 +152,7 @@ public class VisualGUI {
             // Start periodic updates
             startPeriodicUpdates();
         });
-    
+        SimulationSubject.getInstance().addObserver(this);
         initialized = true;
     }
     
@@ -307,7 +305,26 @@ public class VisualGUI {
     }
 
     public void shutdown() {
+        SimulationSubject.getInstance().removeObserver(this);
         executor.shutdown();
+    }
+
+    @Override
+    public void onSimulationEvent(SimulationEvent event) {
+        addEvent(event.getMessage(), convertEventType(event.getType()));
+    }
+
+    @Override
+    public void onWorldUpdate(World world) {
+        updateDisplay();
+    }
+
+    private EventType convertEventType(SimulationEvent.EventType type) {
+        return switch (type) {
+            case ATTACK -> EventType.ATTACK;
+            case POLITICAL -> EventType.POLITICAL;
+            case OTHER -> EventType.OTHER;
+        };
     }
 
     public enum EventType {

@@ -37,7 +37,7 @@ public class Politics {
     }
 
     private static void announceAlliance(Tribe tribe1, Tribe tribe2) {
-        VisualGUI.getInstance(null).addEvent(tribe1.getName() + " and " + tribe2.getName() + " have formed an alliance!", VisualGUI.EventType.POLITICAL);
+        SimulationSubject.getInstance().notifyEvent(tribe1.getName() + " and " + tribe2.getName() + " have formed an alliance!", SimulationEvent.EventType.POLITICAL);
     }
 
     // War methods
@@ -84,7 +84,7 @@ public class Politics {
     }
 
     private static void announceWar(Tribe attacker, Tribe defender) {
-        VisualGUI.getInstance(null).addEvent(attacker.getName() + " has declared war on " + defender.getName() + "!", VisualGUI.EventType.POLITICAL);
+        SimulationSubject.getInstance().notifyEvent(attacker.getName() + " has declared war on " + defender.getName() + "!", SimulationEvent.EventType.POLITICAL);
     }
 
     // Conversion methods
@@ -117,7 +117,7 @@ public class Politics {
     }
 
     private static void announceConversion(Digimon digimon, Tribe newTribe) {
-        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has converted to the " + newTribe.getName() + " tribe.", VisualGUI.EventType.POLITICAL);
+        SimulationSubject.getInstance().notifyEvent(digimon.getName() + " has converted to the " + newTribe.getName() + " tribe.", SimulationEvent.EventType.POLITICAL);
     }
 
     // Political situation update methods
@@ -194,11 +194,11 @@ public class Politics {
                 if (attackStrength > defenseStrength) {
                     // Attackers win in this sector
                     applyBattleDamage(sectorDefenders, 20);
-                    VisualGUI.getInstance(null).addEvent(attacker.getName() + " won a battle against " + defender.getName() + " in " + sector.getName() + "!", VisualGUI.EventType.POLITICAL);
+                    SimulationSubject.getInstance().notifyEvent(attacker.getName() + " won a battle against " + defender.getName() + " in " + sector.getName() + "!", SimulationEvent.EventType.POLITICAL);
                 } else {
                     // Defenders win in this sector
                     applyBattleDamage(sectorAttackers, 20);
-                    VisualGUI.getInstance(null).addEvent(defender.getName() + " successfully defended against " + attacker.getName() + " in " + sector.getName() + "!", VisualGUI.EventType.POLITICAL);
+                    SimulationSubject.getInstance().notifyEvent(defender.getName() + " successfully defended against " + attacker.getName() + " in " + sector.getName() + "!", SimulationEvent.EventType.POLITICAL);
                 }
             }
         }
@@ -215,7 +215,7 @@ public class Politics {
             int newHealth = Math.max(0, digimon.getHealth() - damage);
             digimon.setHealth(newHealth);
             if (newHealth == 0) {
-                VisualGUI.getInstance(null).addEvent(digimon.getName() + " has been defeated in battle!", VisualGUI.EventType.POLITICAL);
+                SimulationSubject.getInstance().notifyEvent(digimon.getName() + " has been defeated in battle!", SimulationEvent.EventType.POLITICAL);
             }
         });
     }

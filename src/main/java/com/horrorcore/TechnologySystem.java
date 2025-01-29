@@ -33,7 +33,7 @@ public class TechnologySystem {
     public void advanceAge() {
         if (currentAgeIndex < AGES.length - 1) {
             currentAgeIndex++;
-            VisualGUI.getInstance(null).addEvent("The world has entered the " + AGES[currentAgeIndex] + "!", VisualGUI.EventType.OTHER);
+            SimulationSubject.getInstance().notifyEvent("The world has entered the " + AGES[currentAgeIndex] + "!", SimulationEvent.EventType.OTHER);
         }
     }
 
@@ -56,7 +56,7 @@ public class TechnologySystem {
             
             professions.get(profession).add(digimon);
             digimon.setProfession(profession);
-            VisualGUI.getInstance(null).addEvent(digimon.getName() + " has become a " + profession + "!", VisualGUI.EventType.OTHER);
+            SimulationSubject.getInstance().notifyEvent(digimon.getName() + " has become a " + profession + "!", SimulationEvent.EventType.OTHER);
         }
     }
 
@@ -84,7 +84,7 @@ public class TechnologySystem {
                         militaryStrength += 1 + (getTechnologyLevel("Military") / 2);
                         if(getTechnologyLevel("Military") % 10 == 0 && tribe.getMilitaryStrength() > 0) {
                             tribe.setMilitaryStrength(tribe.getMilitaryStrength() + 40);
-                            VisualGUI.getInstance(null).addEvent(tribe.getName() + " has increased their military strength by 10!", VisualGUI.EventType.OTHER);
+                            SimulationSubject.getInstance().notifyEvent(tribe.getName() + " has increased their military strength by 10!", SimulationEvent.EventType.OTHER);
                         }
                         break;
                     case "Scientist":
@@ -100,9 +100,9 @@ public class TechnologySystem {
             tribe.addResearchPoints(researchPoints);
     
             // Log the results
-            VisualGUI.getInstance(null).addEvent(tribe.getName() + " produced " + foodProduced + " food, constructed " + 
+            SimulationSubject.getInstance().notifyEvent(tribe.getName() + " produced " + foodProduced + " food, constructed " + 
                                                  buildingsConstructed + " buildings, and increased military strength by " + 
-                                                 militaryStrength + ".", VisualGUI.EventType.OTHER);
+                                                 militaryStrength + ".", SimulationEvent.EventType.OTHER);
         }
     
         // Conduct research after all work is done
@@ -115,7 +115,7 @@ public class TechnologySystem {
             String technology = technologies[new Random().nextInt(technologies.length)];
             technologyLevels.put(technology, technologyLevels.get(technology) + 1);
             researchPoints -= 10;
-            VisualGUI.getInstance(null).addEvent("New advancement in " + technology + "! Level: " + technologyLevels.get(technology), VisualGUI.EventType.OTHER);
+            SimulationSubject.getInstance().notifyEvent("New advancement in " + technology + "! Level: " + technologyLevels.get(technology), SimulationEvent.EventType.OTHER);
         }
     }
 

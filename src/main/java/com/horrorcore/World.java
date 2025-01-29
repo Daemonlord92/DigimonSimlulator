@@ -243,7 +243,7 @@ public class World {
                         }
                         EvolutionSystem.checkEvolution(digimon);
 
-                        if (digimon.getAggression() > 50) {
+                        if (digimon.getAggression() > 250) {
                             Digimon target = findTarget(digimon, sector);
                             if (target != null) {
                                 digimon.attack(target);
@@ -256,7 +256,7 @@ public class World {
                                 sector.removeDigimon(digimon);
                                 Sector targetSector = targetSectorOptional.get();
                                 targetSector.addDigimon(digimon);
-                                VisualGUI.getInstance(null).addEvent(digimon.getName() + " has moved to sector " + targetSector.getName(), VisualGUI.EventType.OTHER);
+                                SimulationSubject.getInstance().notifyEvent(digimon.getName() + " has moved to sector " + targetSector.getName(), SimulationEvent.EventType.OTHER);
                             }
                         }
                     }
@@ -325,7 +325,7 @@ public class World {
                     simulateRandomDeath();
                 }
 
-                gui.updateDisplay(); // Use the passed GUI instance
+                SimulationSubject.getInstance().notifyWorldUpdate(this); // Use the passed GUI instance
 
                 time++;
                 INSTANCE.getTribes().stream().filter(tribe -> tribe.getMembers().isEmpty()).forEach(tribe -> Tribe.getAllTribes().remove(tribe));
@@ -341,7 +341,7 @@ public class World {
             }
 
             // Update GUI on EDT
-            SwingUtilities.invokeLater(gui::updateDisplay);
+            SimulationSubject.getInstance().notifyWorldUpdate(this);
 
             try {
                 Thread.sleep(1000); // Adjust as needed
@@ -374,7 +374,7 @@ private void simulateRandomDeath() {
                     if (digimonSector != null) {
                         digimonSector.removeDigimon(digimon);
                         LOGGER.info(digimon.getName() + " has died in " + digimonSector.getName());
-                        VisualGUI.getInstance(null).addEvent(digimon.getName() + " has died in " + digimonSector.getName(), VisualGUI.EventType.OTHER);
+                        SimulationSubject.getInstance().notifyEvent(digimon.getName() + " has died in " + digimonSector.getName(), SimulationEvent.EventType.OTHER);
                     }
                 }
             }

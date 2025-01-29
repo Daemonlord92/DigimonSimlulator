@@ -70,13 +70,13 @@ public class Tribe {
                     .findFirst()
                     .orElse(world.getSectors().get(0));
 
-            VisualGUI.getInstance(null).addEvent(tribeName + " has been formed in " + tribeSector.getName() + "!", VisualGUI.EventType.POLITICAL);
+            SimulationSubject.getInstance().notifyEvent(tribeName + " has been formed in " + tribeSector.getName() + "!", SimulationEvent.EventType.POLITICAL);
         }
     }
 
     public static void buildCity(Tribe tribe) {
         tribe.buildings++;
-        VisualGUI.getInstance(null).addEvent(tribe.getName() + " has built a city!", VisualGUI.EventType.POLITICAL);
+        SimulationSubject.getInstance().notifyEvent(tribe.getName() + " has built a city!", SimulationEvent.EventType.POLITICAL);
     }
 
     // Instance methods
@@ -104,9 +104,9 @@ public class Tribe {
         int foodToFeed = members.size() * 10;
         if (totalFood >= foodToFeed) {
             totalFood -= foodToFeed;
-            VisualGUI.getInstance(null).addEvent(getName() + " has fed their tribe!", VisualGUI.EventType.POLITICAL);
+            SimulationSubject.getInstance().notifyEvent(getName() + " has fed their tribe!", SimulationEvent.EventType.POLITICAL);
         } else {
-            VisualGUI.getInstance(null).addEvent(getName() + " has not enough food to feed their tribe!", VisualGUI.EventType.POLITICAL);
+            SimulationSubject.getInstance().notifyEvent(getName() + " has not enough food to feed their tribe!", SimulationEvent.EventType.POLITICAL);
         }
     }
 
@@ -119,7 +119,7 @@ public class Tribe {
         int foodProduced = (int) (initialProduction * technologyBonus);
 
         addFood(foodProduced);
-        VisualGUI.getInstance(null).addEvent(getName() + " has produced " + foodProduced + " food!", VisualGUI.EventType.POLITICAL);
+        SimulationSubject.getInstance().notifyEvent(getName() + " has produced " + foodProduced + " food!", SimulationEvent.EventType.POLITICAL);
     }
 
     public void addResearchPoints(int points) {

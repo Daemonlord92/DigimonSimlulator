@@ -13,10 +13,14 @@ public class BirthSystem {
      */
     public static void randomBirth(List<Digimon> digimonList) {
         Random random = new Random();
-        if (random.nextInt(100) < 25) { // 25% chance of a new Digimon being born
+        if (random.nextInt(100) < 25) { // 25% chance
             Digimon newDigimon = DigimonGenerator.generateRebirthDigimon();
+            // Add to the provided sector's list instead
             digimonList.add(newDigimon);
-            SimulationSubject.getInstance().notifyEvent("A new Digimon, " + newDigimon.getName() + ", has been born!", SimulationEvent.EventType.OTHER);
+            SimulationSubject.getInstance().notifyEvent(
+                    "A new Digimon, " + newDigimon.getName() + ", has been born!",
+                    SimulationEvent.EventType.OTHER
+            );
         }
     }
 }

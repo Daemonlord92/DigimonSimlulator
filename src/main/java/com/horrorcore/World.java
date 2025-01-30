@@ -247,9 +247,15 @@ public class World {
 
                     List<Digimon> digimons = sector.getDigimons();
                     RebirthSystem.checkRebirth(digimons);
-                    if (time % (random.nextInt(2) + 1) == 0 && digimons.size() < 10) {
-                        BirthSystem.randomBirth(digimons);
-                    }
+                        if (random.nextDouble() < 0.3 && digimons.size() < 25) {  // 30% chance each tick, higher population cap
+                            BirthSystem.randomBirth(digimons);
+                            // Could add multiple birth attempts
+                            if (random.nextDouble() < 0.5) {  // 50% chance of additional birth
+                                BirthSystem.randomBirth(digimons);
+                            }
+                        } if (digimons.isEmpty()) {
+                            BirthSystem.randomBirth(digimons);
+                        }
                     if (time % 5 == 0) {
                         EventSystem.triggerRandomEvent(INSTANCE);
                     }

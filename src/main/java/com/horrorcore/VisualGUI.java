@@ -7,6 +7,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +25,10 @@ import javafx.scene.text.Text;
 
 public class VisualGUI extends Application implements SimulationObserver {
     private static final int MAX_EVENTS = 20;
-    private static final int UPDATE_INTERVAL_MS = 100; // Update every 100ms
+    private static final int UPDATE_INTERVAL_MS = 100;
+    private Map<String, Canvas> sectorGridCanvases;
+    private static final int CELL_SIZE = 20;
+    private static final int GRID_SIZE = 20;// Update every 100ms
     private static VisualGUI instance;
     private World world;
     private Stage primaryStage;
@@ -41,6 +47,7 @@ public class VisualGUI extends Application implements SimulationObserver {
         this.world = world;
         this.sectorPanels = new HashMap<>();
         this.executor = Executors.newSingleThreadScheduledExecutor();
+        this.sectorGridCanvases = new HashMap<>();
     }
 
     public static VisualGUI getInstance(World world) {
@@ -86,14 +93,29 @@ public class VisualGUI extends Application implements SimulationObserver {
             TabPane sectorTabs = new TabPane();
             sectorTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
             for (Sector sector : world.getSectors()) {
+                // Create a VBox to hold both the grid and the text area
+                VBox sectorContent = new VBox(10);
+                sectorContent.setPadding(new Insets(10));
+
+                // Create canvas for grid visualization
+                Canvas gridCanvas = new Canvas(GRID_SIZE * CELL_SIZE, GRID_SIZE * CELL_SIZE);
+                gridCanvas.setStyle("-fx-background-color: #000000;");
+                sectorGridCanvases.put(sector.getName(), gridCanvas);
+
+                // Create text area for sector info
                 TextArea sectorArea = new TextArea();
                 sectorArea.setEditable(false);
+                sectorArea.setPrefRowCount(5);
                 sectorArea.setStyle("-fx-control-inner-background: #000000; -fx-text-fill: #00ff00;");
                 sectorPanels.put(sector.getName(), sectorArea);
-                
-                Tab tab = new Tab(sector.getName(), sectorArea);
+
+                // Add both to the VBox
+                sectorContent.getChildren().addAll(gridCanvas, sectorArea);
+
+                Tab tab = new Tab(sector.getName(), sectorContent);
                 sectorTabs.getTabs().add(tab);
             }
+
             sectorsTab.setContent(sectorTabs);
     
             // Tribe info tab
@@ -169,6 +191,51 @@ public class VisualGUI extends Application implements SimulationObserver {
         Platform.runLater(this::updateDisplay);
     }
 
+    private void drawGrid(Canvas canvas, Sector sector) {
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+
+        // Draw grid
+        Grid grid = sector.getGrid();
+        for (int x = 0; x < GRID_SIZE; x++) {
+            for (int y = 0; y < GRID_SIZE; y++) {
+                GridCell cell = grid.getCell(x, y);
+                double xPos = x * CELL_SIZE;
+                double yPos = y * CELL_SIZE;
+
+                // Draw cell background
+                switch (cell.getType()) {
+                    case BORDER:
+                        gc.setFill(Color.DARKGRAY);
+                        break;
+                    case BLOCKED:
+                        gc.setFill(Color.RED);
+                        break;
+                    default:
+                        gc.setFill(Color.BLACK);
+                        break;
+                }
+                gc.fillRect(xPos, yPos, CELL_SIZE, CELL_SIZE);
+
+                // Draw grid lines
+                gc.setStroke(Color.DARKGREEN);
+                gc.strokeRect(xPos, yPos, CELL_SIZE, CELL_SIZE);
+
+                // Draw occupants
+                if (cell.getOccupant() != null) {
+                    gc.setFill(Color.GREEN);
+                    gc.fillOval(xPos + 2, yPos + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                }
+
+                // Draw buildings
+                if (cell.getBuilding() != null) {
+                    gc.setFill(Color.BLUE);
+                    gc.fillRect(xPos + 4, yPos + 4, CELL_SIZE - 8, CELL_SIZE - 8);
+                }
+            }
+        }
+    }
+
     public void updateDisplay() {
         Platform.runLater(() -> {
             worldLock.readLock().lock();
@@ -177,6 +244,7 @@ public class VisualGUI extends Application implements SimulationObserver {
                 for (Sector sector : world.getSectors()) {
                     String sectorName = sector.getName();
                     TextArea sectorArea = sectorPanels.get(sectorName);
+                    Canvas canvas = sectorGridCanvases.get(sector.getName());
                     if (sectorArea == null) {
                         System.err.println("Warning: No TextArea found for sector: " + sectorName);
                         continue;
@@ -184,6 +252,9 @@ public class VisualGUI extends Application implements SimulationObserver {
                     StringBuilder sectorInfo = new StringBuilder();
                     sectorInfo.append("Digimons in ").append(sectorName).append(":\n");
 
+                    if (canvas != null) {
+                        drawGrid(canvas, sector);
+                    }
                     for (Digimon digimon : sector.getDigimons()) {
                         if (digimon == null) {
                             System.err.println("Warning: Null Digimon found in sector: " + sectorName);

@@ -252,13 +252,7 @@ public class World {
                         }
 
                         if (digimon.getAge() <= 25 || digimon.getHealth() >= 15 && random.nextBoolean()) {
-                            Optional<Sector> targetSectorOptional = sector.getAdjacentSectors().stream().findAny();
-                            if (targetSectorOptional.isPresent()) {
-                                sector.removeDigimon(digimon);
-                                Sector targetSector = targetSectorOptional.get();
-                                targetSector.addDigimon(digimon);
-                                SimulationSubject.getInstance().notifyEvent(digimon.getName() + " has moved to sector " + targetSector.getName(), SimulationEvent.EventType.OTHER);
-                            }
+                            SectorMovement.moveDigimon(digimon, sector, random);
                         }
                     }
                     for (int i = 0; i < 5; i++) {

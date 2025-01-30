@@ -406,5 +406,197 @@
     "hunger": 40,
     "aggression": 25,
     "stage": "Rookie"
+  },
+  {
+    "name": "Yuramon",
+    "age": 0,
+    "health": 25,
+    "hunger": 65,
+    "aggression": 5,
+    "stage": "Fresh"
+  },
+  {
+    "name": "Tanemon",
+    "age": 1,
+    "health": 45,
+    "hunger": 55,
+    "aggression": 10,
+    "stage": "In-Training"
+  },
+  {
+    "name": "Palmon",
+    "age": 3,
+    "health": 95,
+    "hunger": 45,
+    "aggression": 25,
+    "stage": "Rookie"
+  },
+  {
+    "name": "Togemon",
+    "age": 5,
+    "health": 145,
+    "hunger": 65,
+    "aggression": 45,
+    "stage": "Champion"
+  },
+  {
+    "name": "Lillymon",
+    "age": 7,
+    "health": 195,
+    "hunger": 85,
+    "aggression": 55,
+    "stage": "Ultimate"
+  },
+  {
+    "name": "Rosemon",
+    "age": 9,
+    "health": 245,
+    "hunger": 105,
+    "aggression": 75,
+    "stage": "Mega"
+  },
+  {
+    "name": "Zurumon",
+    "age": 0,
+    "health": 20,
+    "hunger": 60,
+    "aggression": 5,
+    "stage": "Fresh"
+  },
+  {
+    "name": "Pagumon",
+    "age": 1,
+    "health": 40,
+    "hunger": 50,
+    "aggression": 20,
+    "stage": "In-Training"
+  },
+  {
+    "name": "DemiDevimon",
+    "age": 3,
+    "health": 90,
+    "hunger": 40,
+    "aggression": 40,
+    "stage": "Rookie"
+  },
+  {
+    "name": "Devimon",
+    "age": 5,
+    "health": 140,
+    "hunger": 60,
+    "aggression": 60,
+    "stage": "Champion"
+  },
+  {
+    "name": "Myotismon",
+    "age": 7,
+    "health": 190,
+    "hunger": 80,
+    "aggression": 80,
+    "stage": "Ultimate"
+  },
+  {
+    "name": "VenomMyotismon",
+    "age": 9,
+    "health": 240,
+    "hunger": 100,
+    "aggression": 100,
+    "stage": "Mega"
+  },
+  {
+    "name": "MetalKoromon",
+    "age": 0,
+    "health": 30,
+    "hunger": 70,
+    "aggression": 5,
+    "stage": "Fresh"
+  },
+  {
+    "name": "Kapurimon",
+    "age": 1,
+    "health": 50,
+    "hunger": 60,
+    "aggression": 15,
+    "stage": "In-Training"
+  },
+  {
+    "name": "Hagurumon",
+    "age": 3,
+    "health": 100,
+    "hunger": 50,
+    "aggression": 30,
+    "stage": "Rookie"
+  },
+  {
+    "name": "Guardromon",
+    "age": 5,
+    "health": 150,
+    "hunger": 70,
+    "aggression": 45,
+    "stage": "Champion"
+  },
+  {
+    "name": "Andromon",
+    "age": 7,
+    "health": 200,
+    "hunger": 90,
+    "aggression": 60,
+    "stage": "Ultimate"
+  },
+  {
+    "name": "HiAndromon",
+    "age": 9,
+    "health": 250,
+    "hunger": 110,
+    "aggression": 75,
+    "stage": "Mega"
+  },
+  {
+    "name": "Pichimon",
+    "age": 0,
+    "health": 25,
+    "hunger": 65,
+    "aggression": 5,
+    "stage": "Fresh"
+  },
+  {
+    "name": "Bukamon",
+    "age": 1,
+    "health": 45,
+    "hunger": 55,
+    "aggression": 10,
+    "stage": "In-Training"
+  },
+  {
+    "name": "Gomamon",
+    "age": 3,
+    "health": 95,
+    "hunger": 45,
+    "aggression": 25,
+    "stage": "Rookie"
+  },
+  {
+    "name": "Ikkakumon",
+    "age": 5,
+    "health": 145,
+    "hunger": 65,
+    "aggression": 45,
+    "stage": "Champion"
+  },
+  {
+    "name": "Zudomon",
+    "age": 7,
+    "health": 195,
+    "hunger": 85,
+    "aggression": 65,
+    "stage": "Ultimate"
+  },
+  {
+    "name": "Plesiomon",
+    "age": 9,
+    "health": 245,
+    "hunger": 105,
+    "aggression": 85,
+    "stage": "Mega"
   }
 ]

@@ -97,5 +97,49 @@
     "Rookie": "Gargomon:Champion",
     "Champion": "Rapidmon:Ultimate",
     "Ultimate": "MegaGargomon:Mega"
+  },
+  "Yuramon": {
+    "Fresh": "Tanemon:In-Training"
+  },
+  "Tanemon": {
+    "In-Training": "Palmon:Rookie"
+  },
+  "Palmon": {
+    "Rookie": "Togemon:Champion",
+    "Champion": "Lillymon:Ultimate",
+    "Ultimate": "Rosemon:Mega"
+  },
+  "Zurumon": {
+    "Fresh": "Pagumon:In-Training"
+  },
+  "Pagumon": {
+    "In-Training": "DemiDevimon:Rookie"
+  },
+  "DemiDevimon": {
+    "Rookie": "Devimon:Champion",
+    "Champion": "Myotismon:Ultimate",
+    "Ultimate": "VenomMyotismon:Mega"
+  },
+  "MetalKoromon": {
+    "Fresh": "Kapurimon:In-Training"
+  },
+  "Kapurimon": {
+    "In-Training": "Hagurumon:Rookie"
+  },
+  "Hagurumon": {
+    "Rookie": "Guardromon:Champion",
+    "Champion": "Andromon:Ultimate",
+    "Ultimate": "HiAndromon:Mega"
+  },
+  "Pichimon": {
+    "Fresh": "Bukamon:In-Training"
+  },
+  "Bukamon": {
+    "In-Training": "Gomamon:Rookie"
+  },
+  "Gomamon": {
+    "Rookie": "Ikkakumon:Champion",
+    "Champion": "Zudomon:Ultimate",
+    "Ultimate": "Plesiomon:Mega"
   }
 }

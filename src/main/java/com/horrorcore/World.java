@@ -1,8 +1,6 @@
 package com.horrorcore;
 
 import java.util.*;
-import javax.swing.*;
-import java.awt.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -10,7 +8,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Represents the Digimon world, containing all the elements and systems of the simulation.
@@ -41,7 +38,6 @@ public class World {
      * - The initial time set to 0
      * - An empty list of Sectors
      * - A new Random object for generating random events
-     *
      * After initializing these components, it calls the initializeSectors() method
      * to set up the world's geographical structure.
      */
@@ -102,7 +98,6 @@ public class World {
      * Initializes the sectors of the Digimon world and sets up their adjacencies.
      * This method creates ten different sectors, establishes their geographical relationships,
      * and adds them to the world's list of sectors.
-     *
      * The sectors created are:
      * - File Island
      * - Server Continent
@@ -114,9 +109,7 @@ public class World {
      * - Volcanic Zone
      * - Sky City
      * - Underground Caverns
-     *
      * Each sector is connected to one or more adjacent sectors to create a coherent world map.
-     *
      * This method does not take any parameters and does not return any value.
      * It operates on the class-level 'sectors' list, populating it with the created Sector objects.
      */
@@ -183,7 +176,6 @@ public class World {
      * This method runs in an infinite loop, updating the state of the world at each time step.
      * It handles Digimon aging, evolution, movement, combat, birth, rebirth, and tribe formation.
      * It also manages technological advancement and displays the status of each sector and its Digimons.
-     *
      * The simulation performs the following actions:
      * - Ages up Digimons and checks for evolution
      * - Initiates combat between aggressive Digimons
@@ -193,28 +185,13 @@ public class World {
      * - Forms new tribes and builds cities
      * - Advances the technological age
      * - Displays the status of all Digimons in each sector
-     *
      * The simulation pauses for 3 seconds between each time step to allow for observation.
-     *
      * This method does not take any parameters and does not return any value as it runs indefinitely.
      */
     public void simulate(VisualGUI gui) {
             System.out.println("Simulation started with GUI: " + gui);
-            Thread watchdog = new Thread(() -> {
-                while (running.get()) {
-                    try {
-                        Thread.sleep(10000); // Check every 10 seconds
-                        if (System.currentTimeMillis() - lastUpdateTime > 15000) {
-                            LOGGER.warning("Simulation seems to be frozen. Last update was more than 15 seconds ago.");
-                        }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
-            });
-            watchdog.setDaemon(true);
-            watchdog.start();
+        Thread watchdog = getWatchdog();
+        watchdog.start();
             while (running.get()) {
                 lastUpdateTime = System.currentTimeMillis();
                 boolean lockAcquired = false;
@@ -224,15 +201,11 @@ public class World {
                         LOGGER.warning("Failed to acquire write lock within 5 seconds. Skipping this simulation step.");
                         continue;
                     }
-                    StringBuilder output = new StringBuilder();
-                    output.append("\n--- Time: ").append(time).append(" ---\n");
-                    output.append("Current Age: ").append(technologySystem.getCurrentAge()).append("\n");
 
                     for (Sector sector : sectors) {
                     for (Digimon digimon : new ArrayList<>(sector.getDigimons())) {
                         digimon.ageUp();
-                        if (digimon instanceof CelestialDigimon) {
-                            CelestialDigimon celestial = (CelestialDigimon) digimon;
+                        if (digimon instanceof CelestialDigimon celestial) {
                             List<Digimon> nearbyDigimon = sector.getDigimons();
                             if (Math.random() < 0.3) { // 30% chance to help
                                 if (Math.random() < 0.5) {
@@ -307,12 +280,7 @@ public class World {
                 }
 
                 // Replace console output with GUI updates
-                for (Sector sector : sectors) {
-                    output.append("\nSector: ").append(sector.getName()).append("\n");
-                    for (Digimon digimon : sector.getDigimons()) {
-                        output.append(digimon.getStatusString()).append("\n");
-                    }
-                }
+
 
                 int totalDigimon = sectors.stream().mapToInt(sector -> sector.getDigimons().size()).sum();
                 double deathProbability = 0.0005; // 5% chance of death per Digimon per time step
@@ -324,11 +292,10 @@ public class World {
                 }
                 List<Tribe> tribesToRemove = INSTANCE.getTribes().stream()
                     .filter(tribe -> tribe.getMembers().isEmpty())
-                    .collect(Collectors.toList());
+                    .toList();
 
                 if (!tribesToRemove.isEmpty()) {
-                    Tribe.getAllTribes().removeAll(tribesToRemove);
-                    tribes.removeAll(tribesToRemove);
+                    tribesToRemove.forEach(tribes::remove);
                     LOGGER.info("Removed " + tribesToRemove.size() + " empty tribes.");
                 }
                 tribes = Tribe.getAllTribes();
@@ -359,7 +326,26 @@ public class World {
             }
         }
     }
-/**
+
+    private Thread getWatchdog() {
+        Thread watchdog = new Thread(() -> {
+            while (running.get()) {
+                try {
+                    Thread.sleep(10000); // Check every 10 seconds
+                    if (System.currentTimeMillis() - lastUpdateTime > 15000) {
+                        LOGGER.warning("Simulation seems to be frozen. Last update was more than 15 seconds ago.");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        });
+        watchdog.setDaemon(true);
+        return watchdog;
+    }
+
+    /**
  * Simulates a random death of a Digimon in the world without rebirth.
  * This method has a small chance of removing a random Digimon from the world.
  */
@@ -420,27 +406,19 @@ private boolean shouldDigimonDie(Digimon digimon) {
 }
 
 private int getEvolutionStageFactor(Digimon digimon) {
-    switch (digimon.getStage()) {
-        case "Fresh":
-            return 0; // Most vulnerable
-        case "In-Training":
-            return 1;
-        case "Rookie":
-            return 2;
-        case "Champion":
-            return 3;
-        case "Ultimate":
-            return 4;
-        case "Mega":
-            return 5; // Most resilient
-        default:
-            return 2; // Default to Rookie level resilience
-    }
+    return switch (digimon.getStage()) {
+        case "Fresh" -> 0; // Most vulnerable
+        case "In-Training" -> 1;
+        case "Rookie" -> 2;
+        case "Champion" -> 3;
+        case "Ultimate" -> 4;
+        case "Mega" -> 5; // Most resilient
+        default -> 2; // Default to Rookie level resilience
+    };
 }
 
     /**
      * Finds a potential target for the attacking Digimon within the current sector or adjacent sectors.
-     *
      * This method creates a list of possible targets by combining all Digimon in the current sector
      * and its adjacent sectors, excluding the attacker itself. It then randomly selects a target
      * from this list if it's not empty.
@@ -611,18 +589,15 @@ private int getEvolutionStageFactor(Digimon digimon) {
     }
 
     public boolean isInitialized() {
-        if (digimonList == null || tribes == null || technologySystem == null || sectors == null) {
-            return false;
-        }
-        return true;
+        return digimonList != null && tribes != null && technologySystem != null && sectors != null;
     }
 
-    private class WorldState {
-        private List<Digimon> digimonList;
-        private List<Tribe> tribes;
-        private TechnologySystem technologySystem;
-        private int time;
-        private List<Sector> sectors;
+    private static class WorldState {
+        private final List<Digimon> digimonList;
+        private final List<Tribe> tribes;
+        private final TechnologySystem technologySystem;
+        private final int time;
+        private final List<Sector> sectors;
     
         public WorldState(World world) {
             this.digimonList = new ArrayList<>(world.digimonList);

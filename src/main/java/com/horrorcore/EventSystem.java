@@ -3,7 +3,6 @@ package com.horrorcore;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class EventSystem {
@@ -184,9 +183,7 @@ public class EventSystem {
 
                     // Decrease aggression and increase happiness for both tribes
                     Stream.concat(tribeA.getMembers().stream(), tribeB.getMembers().stream())
-                            .forEach(digimon -> {
-                                digimon.setAggression(Math.max(0, digimon.getAggression() - 50));
-                            });
+                            .forEach(digimon -> digimon.setAggression(Math.max(0, digimon.getAggression() - 50)));
                 }
                 break;
                 case "Form New Tribe":
@@ -217,7 +214,7 @@ public class EventSystem {
     private static void handleNaturalEvent(World world, String event) {
         List<Digimon> allDigimon = world.getSectors().stream()
                 .flatMap(sector -> sector.getDigimons().stream())
-                .collect(Collectors.toList());
+                .toList();
     
         for (Digimon digimon : allDigimon) {
             switch (event) {

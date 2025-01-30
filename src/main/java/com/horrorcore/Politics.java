@@ -78,9 +78,7 @@ public class Politics {
 
         World.getInstance().getTribes().stream()
             .filter(tribe -> tribe != attacker && tribe != defender && !attackerAllies.contains(tribe) && !defenderAllies.contains(tribe))
-            .forEach(tribe -> {
-                tribe.getMembers().forEach(digimon -> digimon.setAggression(digimon.getAggression() + 20));
-            });
+            .forEach(tribe -> tribe.getMembers().forEach(digimon -> digimon.setAggression(digimon.getAggression() + 20)));
     }
 
     private static void announceWar(Tribe attacker, Tribe defender) {
@@ -147,7 +145,7 @@ public class Politics {
 
     private static void updateWarSituations() {
         wars.forEach((attacker, defenders) ->
-            defenders.stream().forEach(defender -> {
+            defenders.forEach(defender -> {
                 if (Math.random() < 0.1) {
                     battle(attacker, defender);
                 }
@@ -165,10 +163,10 @@ public class Politics {
             // Organize forces by sector
             for (Sector sector : world.getSectors()) {
                 List<Digimon> attackersInSector = sector.getDigimons().stream()
-                        .filter(d -> d.getTribe() != null && d.getTribe().equals(attacker.getName()))
+                        .filter(d -> d.getTribe() != null && d.getTribe().getName().equals(attacker.getName()))
                         .collect(Collectors.toList());
                 List<Digimon> defendersInSector = sector.getDigimons().stream()
-                        .filter(d -> d.getTribe() != null && d.getTribe().equals(defender.getName()))
+                        .filter(d -> d.getTribe() != null && d.getTribe().getName().equals(defender.getName()))
                         .collect(Collectors.toList());
         
                 if (!attackersInSector.isEmpty()) {

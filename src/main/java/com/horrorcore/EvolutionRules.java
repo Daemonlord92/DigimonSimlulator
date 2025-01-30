@@ -7,8 +7,11 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
+
 
 public class EvolutionRules {
+    private static final Logger LOGGER = Logger.getLogger(String.valueOf(EvolutionRules.class));
     private static Map<String, Map<String, String>> EVOLUTION_RULES;
 
     static {
@@ -16,11 +19,12 @@ public class EvolutionRules {
             Gson gson = new Gson();
             InputStream inputStream = EvolutionRules.class.getClassLoader()
                     .getResourceAsStream("evolution_rules.json");
+            assert inputStream != null;
             InputStreamReader reader = new InputStreamReader(inputStream);
             Type type = new TypeToken<Map<String, Map<String, String>>>() {}.getType();
             EVOLUTION_RULES = gson.fromJson(reader, type);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.fine(e.getMessage());
             EVOLUTION_RULES = new HashMap<>(); // Fallback to empty map
         }
     }

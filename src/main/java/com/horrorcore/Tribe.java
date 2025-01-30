@@ -4,7 +4,6 @@ import java.util.*;
 
 public class Tribe {
     private static int nextId = 1;
-    private static final List<Tribe> allTribes = new ArrayList<>();
 
     private final int id;
     private String name;
@@ -27,7 +26,6 @@ public class Tribe {
         this.militaryStrength = 3;
         this.researchPoints = 0;
         this.technologySystem = new TechnologySystem();
-        allTribes.add(this);
         nextId++;
     }
 

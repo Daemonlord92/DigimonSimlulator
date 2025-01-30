@@ -1,7 +1,6 @@
 package com.horrorcore;
 
 import java.util.List;
-import java.util.Random;
 
 public class CelestialDigimon extends Digimon {
     private static int totalCelestials = 0;

@@ -7,7 +7,7 @@ import java.util.Optional;
 public class Sector {
     private final String name;
     private final List<Digimon> digimons;
-    private List<Sector> adjacentSectors;
+    private final List<Sector> adjacentSectors;
     private final Grid grid;
     private static final int DEFAULT_GRID_SIZE = 20;
 

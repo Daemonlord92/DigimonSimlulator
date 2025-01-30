@@ -3,7 +3,10 @@ package com.horrorcore;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;
-import java.util.concurrent.*;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -11,6 +14,9 @@ public class DigimonSimulator extends Application {
     private static final Logger LOGGER = Logger.getLogger(DigimonSimulator.class.getName());
     private static World world;
     private static VisualGUI gui;
+    private Timeline guiUpdateTimeline;
+    private final AtomicBoolean running = new AtomicBoolean(true);
+
 
     public static void main(String[] args) {
         world = World.getInstance();
@@ -25,7 +31,6 @@ public class DigimonSimulator extends Application {
     public void start(Stage primaryStage) {
         try {
             // Initialize the world first
-            // Replace the if (!world.isInitialized()) block with:
             world.initialize();
             LOGGER.info("World initialized with sectors: " + world.getSectors());
             
@@ -48,38 +53,25 @@ public class DigimonSimulator extends Application {
     
             LOGGER.info("GUI initialized and started");
 
+            // Create a Timeline for GUI updates
+            guiUpdateTimeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
+                gui.updateWorldInfo(world);
+                gui.updateSectorInfo(world.getSectors());
+                SimulationSubject.getInstance().notifyWorldUpdate(world);
+                LOGGER.info("GUI updated");
+            }));
+            guiUpdateTimeline.setCycleCount(Timeline.INDEFINITE);
+            guiUpdateTimeline.play();
+
             // Start the simulation in a separate thread
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.submit(() -> {
-                try {
-                    while (true) {
-                        world.simulate(gui);
-                        LOGGER.info("World simulated. Current time: " + world.getTime());
-                        LOGGER.info("Number of sectors: " + world.getSectors().size());
-                        int totalDigimons = world.getSectors().stream()
-                                                .mapToInt(sector -> sector.getDigimons().size())
-                                                .sum();
-                        LOGGER.info("Total Digimons: " + totalDigimons);
-                        
-                        // Update GUI on JavaFX Application Thread
-                        Platform.runLater(() -> {
-                            gui.updateWorldInfo(world);
-                            gui.updateSectorInfo(world.getSectors());
-                            SimulationSubject.getInstance().notifyWorldUpdate(world);
-                            LOGGER.info("GUI updated");
-                        });
-                        
-                        Thread.sleep(1000); // Increased sleep time for easier observation
-                    }
-                } catch (Exception e) {
-                    LOGGER.log(Level.SEVERE, "Simulation failed", e);
-                }
-            });
-    
+            Thread simulationThread = getSimulationThread();
+
             // Shutdown hook
             primaryStage.setOnCloseRequest(event -> {
                 LOGGER.info("Shutting down...");
-                executor.shutdownNow();
+                running.set(false);
+                guiUpdateTimeline.stop();
+                simulationThread.interrupt();
                 gui.shutdown();
                 Platform.exit();
             });
@@ -88,5 +80,29 @@ public class DigimonSimulator extends Application {
             LOGGER.log(Level.SEVERE, "Failed to initialize the simulator", e);
             Platform.exit();
         }
+    }
+
+    private Thread getSimulationThread() {
+        Thread simulationThread = new Thread(() -> {
+            try {
+                while (running.get()) {
+                    world.simulate(gui);
+                    LOGGER.info("World simulated. Current time: " + world.getTime());
+                    LOGGER.info("Number of sectors: " + world.getSectors().size());
+                    int totalDigimons = world.getSectors().stream()
+                                            .mapToInt(sector -> sector.getDigimons().size())
+                                            .sum();
+                    LOGGER.info("Total Digimons: " + totalDigimons);
+
+                    Thread.sleep(500); // Simulation speed control
+                }
+            } catch (InterruptedException e) {
+                LOGGER.log(Level.INFO, "Simulation thread interrupted", e);
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Simulation failed", e);
+            }
+        });
+        simulationThread.start();
+        return simulationThread;
     }
 }

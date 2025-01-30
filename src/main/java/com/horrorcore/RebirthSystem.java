@@ -30,6 +30,7 @@ public class RebirthSystem {
                 }
 
                 digimonList.set(i, rebornDigimon);
+                assert rebornDigimon != null;
                 SimulationSubject.getInstance().notifyEvent(rebornDigimon.getName() + " has been reborn as a Baby!", SimulationEvent.EventType.OTHER);
             }
         }

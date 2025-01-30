@@ -27,12 +27,12 @@ public class EvolutionSystem {
     }
 
     private static int getEvolutionAgeRequirement(String stage) {
-        switch (stage) {
-            case "In-Training": return 5;
-            case "Rookie": return 10;
-            case "Champion": return 15;
-            case "Ultimate": return 20;
-            default: return Integer.MAX_VALUE; // No evolution
-        }
+        return switch (stage) {
+            case "In-Training" -> 5;
+            case "Rookie" -> 10;
+            case "Champion" -> 15;
+            case "Ultimate" -> 20;
+            default -> Integer.MAX_VALUE; // No evolution
+        };
     }
 }

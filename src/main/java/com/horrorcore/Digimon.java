@@ -51,7 +51,6 @@ public class Digimon {
 
     public void eat() {
         int hungerReduction = switch (this.stage) {
-            case "Rookie" -> 20;
             case "Champion" -> 30;
             case "Ultimate" -> 40;
             case "Mega" -> 50;

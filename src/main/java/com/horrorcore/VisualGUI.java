@@ -13,24 +13,23 @@ import javafx.scene.paint.Color;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 
 public class VisualGUI extends Application implements SimulationObserver {
     private static final int MAX_EVENTS = 20;
     private static final int UPDATE_INTERVAL_MS = 100;
-    private Map<String, Canvas> sectorGridCanvases;
+    private final Map<String, Canvas> sectorGridCanvases;
     private static final int CELL_SIZE = 20;
     private static final int GRID_SIZE = 20;// Update every 100ms
     private static VisualGUI instance;
-    private World world;
+    private final World world;
     private Stage primaryStage;
     private static Map<String, TextArea> sectorPanels;
     private Text worldInfoArea;
@@ -38,14 +37,14 @@ public class VisualGUI extends Application implements SimulationObserver {
     private TextArea politicalEventArea;
     private TextArea tribeInfoArea;
     private TextArea otherEventArea;
-    private ScheduledExecutorService executor;
+    private final ScheduledExecutorService executor;
     private final ReadWriteLock worldLock = new ReentrantReadWriteLock();
     private boolean initialized = false;
     private int lastClearTime = 0;
 
     private VisualGUI(World world) {
         this.world = world;
-        this.sectorPanels = new HashMap<>();
+        sectorPanels = new HashMap<>();
         this.executor = Executors.newSingleThreadScheduledExecutor();
         this.sectorGridCanvases = new HashMap<>();
     }
@@ -146,7 +145,7 @@ public class VisualGUI extends Application implements SimulationObserver {
     
             Scene scene = new Scene(root, 1000, 800);
             if (getClass().getResource("/styles.css") != null) {
-                scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+                scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles.css")).toExternalForm());
             } else {
                 System.err.println("Warning: styles.css not found");
             }
@@ -169,18 +168,11 @@ public class VisualGUI extends Application implements SimulationObserver {
 
     private TextArea createEventArea(String title) {
         TextArea area = new TextArea();
+        area.setText(title);
         area.setEditable(false);
         area.setPrefRowCount(5);
         area.setStyle("-fx-control-inner-background: #000000; -fx-text-fill: #00ff00;");
         return area;
-    }
-
-    private void showAboutDialog() {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("About");
-        alert.setHeaderText(null);
-        alert.setContentText("Digimon World Simulator\nVersion 1.0");
-        alert.showAndWait();
     }
 
     private void startPeriodicUpdates() {
@@ -227,7 +219,7 @@ public class VisualGUI extends Application implements SimulationObserver {
                     gc.fillOval(xPos + 2, yPos + 2, CELL_SIZE - 4, CELL_SIZE - 4);
 
                     // Add a small "D" indicator
-                    if(cell.getOccupant() instanceof Digimon) {
+                    if(cell.getOccupant() != null) {
                         gc.setFill(Color.WHITE);
                         gc.setFont(new Font(10));
                         gc.fillText("D", xPos + 7, yPos + 14);
@@ -294,12 +286,14 @@ public class VisualGUI extends Application implements SimulationObserver {
                 int timeToNextTechAge = world.getTimeToNextAge();
                 int totalBuildings = world.getBuildings();
                 worldInfoArea.setText(String.format(
-                        "Time: %d\n" +
-                                "Technology Age: %s\n" +
-                                "Total Digimon: %d\n" +
-                                "Total Tribes: %d\n" +
-                                "Time To Next Tech Age: %d\n" +
-                                "Total Buildings: %d\n",
+                        """
+                                Time: %d
+                                Technology Age: %s
+                                Total Digimon: %d
+                                Total Tribes: %d
+                                Time To Next Tech Age: %d
+                                Total Buildings: %d
+                                """,
                         world.getTime(),
                         world.getTechnologySystem().getCurrentAge(),
                         totalDigimon,
@@ -335,18 +329,11 @@ public class VisualGUI extends Application implements SimulationObserver {
                 clearAllEvents();
                 lastClearTime = currentTime;
             }
-            switch (type) {
-                case ATTACK:
-                    targetArea = attackEventArea;
-                    break;
-                case POLITICAL:
-                    targetArea = politicalEventArea;
-                    break;
-                case OTHER:
-                default:
-                    targetArea = otherEventArea;
-                    break;
-            }
+            targetArea = switch (type) {
+                case ATTACK -> attackEventArea;
+                case POLITICAL -> politicalEventArea;
+                default -> otherEventArea;
+            };
             String[] events = targetArea.getText().split("\n");
             StringBuilder newEvents = new StringBuilder();
 
@@ -378,12 +365,14 @@ public class VisualGUI extends Application implements SimulationObserver {
             int timeToNextTechAge = world.getTimeToNextAge();
             int totalBuildings = world.getBuildings();
             worldInfoArea.setText(String.format(
-                    "Time: %d\n" +
-                            "Technology Age: %s\n" +
-                            "Total Digimon: %d\n" +
-                            "Total Tribes: %d\n" +
-                            "Time To Next Tech Age: %d\n" +
-                            "Total Buildings: %d\n",
+                    """
+                            Time: %d
+                            Technology Age: %s
+                            Total Digimon: %d
+                            Total Tribes: %d
+                            Time To Next Tech Age: %d
+                            Total Buildings: %d
+                            """,
                     world.getTime(),
                     world.getTechnologySystem().getCurrentAge(),
                     totalDigimon,
@@ -425,7 +414,7 @@ public class VisualGUI extends Application implements SimulationObserver {
 
     @Override
     public void onSimulationEvent(SimulationEvent event) {
-        addEvent(event.getMessage(), convertEventType(event.getType()));
+        addEvent(event.message(), convertEventType(event.type()));
     }
 
     @Override

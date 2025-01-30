@@ -8,35 +8,17 @@ import java.lang.reflect.Type;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.stream.Collectors;
 import java.util.List;
 import java.util.Random;
 
 public class DigimonGenerator {
-    private static final String[] NAMES = {"Agumon", "Gabumon", "Patamon", "Biyomon", "Tentomon", "Palmon", "Gomamon"};
-    private static final String[] STAGES = {"Fresh","In-Training", "Rookie", "Champion", "Ultimate", "Mega"};
     private static final List<Digimon> digimonList;
 
-    /**
-     * Static initializer block for loading Digimon data from a JSON file.
-     * This block is executed when the class is loaded and initializes the digimonList.
-     * 
-     * The method performs the following steps:
-     * 1. Creates a new Gson instance for JSON parsing.
-     * 2. Loads the "digimon.json" file from the classpath as an InputStream.
-     * 3. Creates an InputStreamReader from the InputStream.
-     * 4. Defines the Type for a List of Digimon objects.
-     * 5. Parses the JSON data into a List of Digimon objects.
-     * 
-     * If any JSON-related exceptions occur during this process, they are caught
-     * and wrapped in a RuntimeException.
-     * 
-     * @throws RuntimeException if there's an error in JSON syntax or I/O operations
-     */
     static {
         try {
             Gson gson = new Gson();
             InputStream is = DigimonGenerator.class.getClassLoader().getResourceAsStream("digimon.json");
+            assert is != null;
             InputStreamReader reader = new InputStreamReader(is);
             Type listType = new TypeToken<List<Digimon>>(){}.getType();
             digimonList = gson.fromJson(reader, listType);
@@ -104,7 +86,7 @@ public static Digimon generateRebirthDigimon() {
     Random random = new Random();
     List<Digimon> rebirthCandidates = digimonList.stream()
             .filter(d -> d.getStage().equals("In-Training") || d.getStage().equals("Rookie") || d.getStage().equals("Fresh"))
-            .collect(Collectors.toList());
+            .toList();
 
     if (rebirthCandidates.isEmpty()) {
         throw new RuntimeException("No In-Training or Rookie Digimon found for rebirth.");

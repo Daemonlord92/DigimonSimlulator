@@ -221,16 +221,38 @@ public class VisualGUI extends Application implements SimulationObserver {
                 gc.setStroke(Color.DARKGREEN);
                 gc.strokeRect(xPos, yPos, CELL_SIZE, CELL_SIZE);
 
-                // Draw occupants
+                // Draw occupants with labels
                 if (cell.getOccupant() != null) {
                     gc.setFill(Color.GREEN);
                     gc.fillOval(xPos + 2, yPos + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+
+                    // Add a small "D" indicator
+                    if(cell.getOccupant() instanceof Digimon) {
+                        gc.setFill(Color.WHITE);
+                        gc.setFont(new Font(10));
+                        gc.fillText("D", xPos + 7, yPos + 14);
+                    } else if (cell.getOccupant() instanceof CelestialDigimon) {
+                        gc.setFill(Color.YELLOW);
+                        gc.setFont(new Font(10));
+                        gc.fillText("C", xPos + 7, yPos + 14);
+                    }
                 }
 
-                // Draw buildings
+                // Draw buildings with type indicators
                 if (cell.getBuilding() != null) {
                     gc.setFill(Color.BLUE);
                     gc.fillRect(xPos + 4, yPos + 4, CELL_SIZE - 8, CELL_SIZE - 8);
+
+                    // Add building type indicator
+                    gc.setFill(Color.WHITE);
+                    gc.setFont(new Font(10));
+                    String buildingLabel = switch(cell.getBuilding().getType()) {
+                        case HOUSE -> "H";
+                        case FARM -> "F";
+                        case BARRACKS -> "B";
+                        case CITY_CENTER -> "C";
+                    };
+                    gc.fillText(buildingLabel, xPos + 7, yPos + 14);
                 }
             }
         }

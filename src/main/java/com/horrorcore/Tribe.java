@@ -74,8 +74,18 @@ public class Tribe {
     }
 
     public static void buildCity(Tribe tribe) {
-        tribe.buildings++;
-        SimulationSubject.getInstance().notifyEvent(tribe.getName() + " has built a city!", SimulationEvent.EventType.POLITICAL);
+        Sector tribeSector = World.getInstance().getSectors().stream()
+                .filter(sector -> sector.getDigimons().contains(tribe.getLeader()))
+                .findFirst()
+                .orElse(null);
+
+        if (tribeSector!= null) {
+//            GridCell gridCell = tribeSector.getGrid().
+//            int x = tribeSector.getX();
+//            tribeSector.placeBuilding(new Building(Building.BuildingType.CITY_CENTER, tribe, ));
+            tribe.buildings++;
+            SimulationSubject.getInstance().notifyEvent(tribe.getName() + " has built a city!", SimulationEvent.EventType.POLITICAL);
+        }
     }
 
     // Instance methods

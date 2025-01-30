@@ -67,34 +67,40 @@ public class VisualGUI extends Application implements SimulationObserver {
             System.out.println("VisualGUI already initialized. Skipping initialization.");
             return;
         }
-    
+
         Platform.runLater(() -> {
             primaryStage.setTitle("Digimon World Simulator");
-    
+
             BorderPane root = new BorderPane();
             root.setStyle("-fx-background-color: #000000;");
-    
+
             // Create the main display area
             VBox mainContent = new VBox(10);
             mainContent.setPadding(new Insets(20));
-    
+
             // World info display
             Text worldInfoText = new Text();
             worldInfoText.setFont(Font.font("Courier New", 14));
             worldInfoText.setFill(Color.LIMEGREEN);
-    
+
             // Create TabPane for different information sections
             TabPane infoTabs = new TabPane();
             infoTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-    
+
             // Sector info tab
             Tab sectorsTab = new Tab("Sectors");
             TabPane sectorTabs = new TabPane();
             sectorTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+
+            Map<String, GridInfoPanel> gridInfoPanels = new HashMap<>();
+
             for (Sector sector : world.getSectors()) {
-                // Create a VBox to hold both the grid and the text area
-                VBox sectorContent = new VBox(10);
+                // Create a HBox to hold the grid canvas and info panel side by side
+                HBox sectorContent = new HBox(10);
                 sectorContent.setPadding(new Insets(10));
+
+                // Create a VBox for the grid canvas
+                VBox gridBox = new VBox(10);
 
                 // Create canvas for grid visualization
                 Canvas gridCanvas = new Canvas(GRID_SIZE * CELL_SIZE, GRID_SIZE * CELL_SIZE);
@@ -108,22 +114,35 @@ public class VisualGUI extends Application implements SimulationObserver {
                 sectorArea.setStyle("-fx-control-inner-background: #000000; -fx-text-fill: #00ff00;");
                 sectorPanels.put(sector.getName(), sectorArea);
 
-                // Add both to the VBox
-                sectorContent.getChildren().addAll(gridCanvas, sectorArea);
+                // Create and store GridInfoPanel
+                GridInfoPanel infoPanel = new GridInfoPanel();
+                gridInfoPanels.put(sector.getName(), infoPanel);
+
+                // Add mouse click event handler to the canvas
+                gridCanvas.setOnMouseClicked(event -> {
+                    int x = (int) (event.getX() / CELL_SIZE);
+                    int y = (int) (event.getY() / CELL_SIZE);
+                    GridCell cell = sector.getCellAt(x, y);
+                    infoPanel.updateInfo(cell);
+                });
+
+                // Add components to their containers
+                gridBox.getChildren().addAll(gridCanvas, sectorArea);
+                sectorContent.getChildren().addAll(gridBox, infoPanel);
 
                 Tab tab = new Tab(sector.getName(), sectorContent);
                 sectorTabs.getTabs().add(tab);
             }
 
             sectorsTab.setContent(sectorTabs);
-    
-            // Tribe info tab
+
+            // Rest of the initialize method remains the same...
             Tab tribesTab = new Tab("Tribes");
             tribeInfoArea = new TextArea();
             tribeInfoArea.setEditable(false);
             tribeInfoArea.setStyle("-fx-control-inner-background: #000000; -fx-text-fill: #00ff00;");
             tribesTab.setContent(tribeInfoArea);
-    
+
             // Event info tab
             Tab eventsTab = new Tab("Events");
             VBox eventBox = new VBox(10);
@@ -136,14 +155,12 @@ public class VisualGUI extends Application implements SimulationObserver {
                     new Label("Other Events:"), otherEventArea
             );
             eventsTab.setContent(eventBox);
-    
+
             infoTabs.getTabs().addAll(sectorsTab, tribesTab, eventsTab);
-    
             mainContent.getChildren().addAll(worldInfoText, infoTabs);
-    
             root.setCenter(mainContent);
-    
-            Scene scene = new Scene(root, 1000, 800);
+
+            Scene scene = new Scene(root, 1200, 800); // Increased width to accommodate info panel
             if (getClass().getResource("/styles.css") != null) {
                 scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles.css")).toExternalForm());
             } else {
@@ -151,17 +168,17 @@ public class VisualGUI extends Application implements SimulationObserver {
             }
             primaryStage.setScene(scene);
             primaryStage.show();
-    
+
             // Update references
             this.worldInfoArea = worldInfoText;
-    
+
             // Start periodic updates
             startPeriodicUpdates();
         });
-    
+
         // Ensure initial update
         updateDisplay();
-    
+
         SimulationSubject.getInstance().addObserver(this);
         initialized = true;
     }

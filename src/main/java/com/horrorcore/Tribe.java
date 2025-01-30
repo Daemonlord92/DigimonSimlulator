@@ -72,17 +72,17 @@ public class Tribe {
     }
 
     public static void buildCity(Tribe tribe) {
-        Sector tribeSector = World.getInstance().getSectors().stream()
-                .filter(sector -> sector.getDigimons().contains(tribe.getLeader()))
-                .findFirst()
-                .orElse(null);
-
-        if (tribeSector!= null) {
-//            GridCell gridCell = tribeSector.getGrid().
-//            int x = tribeSector.getX();
-//            tribeSector.placeBuilding(new Building(Building.BuildingType.CITY_CENTER, tribe, ));
+        if (BuildingSystem.buildCity(tribe, World.getInstance())) {
             tribe.buildings++;
-            SimulationSubject.getInstance().notifyEvent(tribe.getName() + " has built a city!", SimulationEvent.EventType.POLITICAL);
+            SimulationSubject.getInstance().notifyEvent(
+                    tribe.getName() + " has successfully built a new city with surrounding buildings!",
+                    SimulationEvent.EventType.POLITICAL
+            );
+        } else {
+            SimulationSubject.getInstance().notifyEvent(
+                    tribe.getName() + " failed to find a suitable location for a new city.",
+                    SimulationEvent.EventType.POLITICAL
+            );
         }
     }
 

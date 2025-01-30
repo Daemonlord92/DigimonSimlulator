@@ -21,7 +21,7 @@ public class World {
     private static World INSTANCE;
     private static final Logger LOGGER = Logger.getLogger(World.class.getName());
     private List<Digimon> digimonList;
-    private List<Tribe> tribes;
+    private Set<Tribe> tribes;
     private TechnologySystem technologySystem;
     private int time;
     private List<Sector> sectors;
@@ -47,7 +47,7 @@ public class World {
      */
     private World() {
         this.digimonList = new ArrayList<>();
-        this.tribes = Tribe.getAllTribes();
+        this.tribes = new HashSet<>();
         this.technologySystem = new TechnologySystem();
         this.time = 0;
         this.sectors = new ArrayList<>();
@@ -533,7 +533,7 @@ private int getEvolutionStageFactor(Digimon digimon) {
                .orElse(null);
     }
 
-    public List<Tribe> getTribes() {
+    public Set<Tribe> getTribes() {
         return tribes;
     }
     public void saveState() {
@@ -601,7 +601,7 @@ private int getEvolutionStageFactor(Digimon digimon) {
                 return;
             }
             this.digimonList = new ArrayList<>(savedState.digimonList);
-            this.tribes = new ArrayList<>(savedState.tribes);
+            this.tribes = new HashSet<>(savedState.tribes);
             this.technologySystem = new TechnologySystem(savedState.technologySystem);
             this.time = savedState.time;
             this.sectors = new ArrayList<>(savedState.sectors);

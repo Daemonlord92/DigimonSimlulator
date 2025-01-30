@@ -127,7 +127,7 @@ public class Politics {
     }
 
     private static void handleRandomPoliticalEvents() {
-        List<Tribe> tribes = World.getInstance().getTribes();
+        Set<Tribe> tribes = World.getInstance().getTribes();
         if (tribes.size() >= 2 && Math.random() < 0.1) {
             Tribe tribe1 = getRandomTribe(tribes);
             Tribe tribe2 = getRandomTribe(tribes);
@@ -141,8 +141,8 @@ public class Politics {
         }
     }
 
-    private static Tribe getRandomTribe(List<Tribe> tribes) {
-        return tribes.get((int) (Math.random() * tribes.size()));
+    private static Tribe getRandomTribe(Set<Tribe> tribes) {
+        return tribes.stream().findAny().orElse(null);
     }
 
     private static void updateWarSituations() {

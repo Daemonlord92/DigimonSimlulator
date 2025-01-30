@@ -1,9 +1,6 @@
 package com.horrorcore;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 
 public class Tribe {
     private static int nextId = 1;
@@ -36,8 +33,8 @@ public class Tribe {
 
     // Static methods
 
-    public static List<Tribe> getAllTribes() {
-        return allTribes;
+    public static Set<Tribe> getAllTribes() {
+        return World.getInstance().getTribes();
     }
 
     public static void formNewTribe(World world) {

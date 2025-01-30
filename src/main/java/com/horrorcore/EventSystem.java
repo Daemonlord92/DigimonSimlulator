@@ -2,6 +2,7 @@ package com.horrorcore;
 
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -71,80 +72,63 @@ public class EventSystem {
      *              and "Make Peace".
      */
     private static void handlePoliticalEvent(World world, String event) {
-        List<Tribe> tribes = world.getTribes();
+        Set<Tribe> tribes = world.getTribes();
 
         switch (event) {
             case "Alliance Formed":
-                if (tribes.size() >= 2) {
-                    Tribe tribeA = tribes.get(random.nextInt(tribes.size()));
-                    Tribe tribeB = tribes.get(random.nextInt(tribes.size()));
-                    if (tribeA != tribeB) {
-                        Politics.formAlliance(tribeA, tribeB);
-                        world.getSectors().stream()
-                                .flatMap(sector -> sector.getDigimons().stream())
-                                .forEach(digimon -> {
-                                    if (digimon.getTribe() == tribeA || digimon.getTribe() == tribeB) {
-                                        digimon.setAggression(digimon.getAggression() + 100);
-                                    } else if (digimon.getTribe() != null) {
-                                        digimon.setAggression(digimon.getAggression() + 50);
-                                    } else {
-                                        digimon.setAggression(digimon.getAggression() + 26);
-                                    }
-                                });
-                    }
-                }
-                break;
             case "War Declared":
                 if (tribes.size() >= 2) {
-                    Tribe tribeA = tribes.get(random.nextInt(tribes.size()));
-                    Tribe tribeB = tribes.get(random.nextInt(tribes.size()));
-                    if (tribeA != tribeB) {
-                        Politics.declareWar(tribeA, tribeB);
-                        world.getSectors().stream()
-                                .flatMap(sector -> sector.getDigimons().stream())
-                                .forEach(digimon -> {
-                                    if (digimon.getTribe() == tribeA || digimon.getTribe() == tribeB) {
-                                        digimon.setAggression(digimon.getAggression() + 100);
-                                    } else if (digimon.getTribe() != null) {
-                                        digimon.setAggression(digimon.getAggression() + 50);
-                                    } else {
-                                        digimon.setAggression(digimon.getAggression() + 26);
-                                    }
-                                });
-                    }
+                    Tribe tribeA = tribes.stream().findFirst().get();
+                    Tribe tribeB = tribes.stream().filter(t -> t != tribeA).findFirst().get();
+                    Politics.formAlliance(tribeA, tribeB);
+                    final Tribe finalTribeA = tribeA;
+                    final Tribe finalTribeB = tribeB;
+                    world.getSectors().stream()
+                            .flatMap(sector -> sector.getDigimons().stream())
+                            .forEach(digimon -> {
+                                if (digimon.getTribe() == finalTribeA || digimon.getTribe() == finalTribeB) {
+                                    digimon.setAggression(digimon.getAggression() + 100);
+                                } else if (digimon.getTribe() != null) {
+                                    digimon.setAggression(digimon.getAggression() + 50);
+                                } else {
+                                    digimon.setAggression(digimon.getAggression() + 26);
+                                }
+                            });
                 }
                 break;
             case "Trade Agreement":
                 if (tribes.size() >= 2) {
-                    Tribe tribe1 = tribes.get(random.nextInt(tribes.size()));
-                    Tribe tribe2 = tribes.get(random.nextInt(tribes.size()));
-                    if (tribe1 != tribe2) {
-                        SimulationSubject.getInstance().notifyEvent("Trade agreement formed between " + tribe1.getName() + " and " + tribe2.getName(), SimulationEvent.EventType.POLITICAL);
-                        world.getSectors().stream()
-                                .flatMap(sector -> sector.getDigimons().stream())
-                                .forEach(digimon -> {
-                                    if (digimon.getTribe() == tribe1) {
-                                        digimon.setHunger(digimon.getHunger() - 20);
-                                    } else if (digimon.getTribe() == tribe2) {
-                                        digimon.setHunger(digimon.getHunger() + 20);
-                                    }
-                                });
-                    }
+                    Tribe tribeA = tribes.stream().findFirst().get();
+                    Tribe tribeB = tribes.stream().filter(t -> t != tribeA).findFirst().get();
+                    SimulationSubject.getInstance().notifyEvent("Trade agreement formed between " + tribeA.getName() + " and " + tribeB.getName(), SimulationEvent.EventType.POLITICAL);
+                    final Tribe finalTribeA = tribeA;
+                    final Tribe finalTribeB = tribeB;
+                    world.getSectors().stream()
+                            .flatMap(sector -> sector.getDigimons().stream())
+                            .forEach(digimon -> {
+                                if (digimon.getTribe() == finalTribeA) {
+                                    digimon.setHunger(digimon.getHunger() - 20);
+                                } else if (digimon.getTribe() == finalTribeB) {
+                                    digimon.setHunger(digimon.getHunger() + 20);
+                                }
+                            });
                 }
                 break;
             case "Cultural Exchange":
                 if (tribes.size() >= 2) {
-                    Tribe tribe1 = tribes.get(random.nextInt(tribes.size()));
-                    Tribe tribe2 = tribes.get(random.nextInt(tribes.size()));
-                    if (tribe1 != tribe2) {
-                        SimulationSubject.getInstance().notifyEvent("Cultural exchange initiated between " + tribe1.getName() + " and " + tribe2.getName(), SimulationEvent.EventType.POLITICAL);
-                        // Implement cultural exchange effects
+                    Tribe tribeA = tribes.stream().findFirst().get();
+                    Tribe tribeB = tribes.stream().findFirst().get();
+                    while (tribeB == tribeA) {
+                        tribeB = tribes.stream().findFirst().get();
                     }
+                    
+                    SimulationSubject.getInstance().notifyEvent("Cultural exchange initiated between " + tribeA.getName() + " and " + tribeB.getName(), SimulationEvent.EventType.POLITICAL);
+                    
                 }
                 break;
             case "Diplomatic Mission":
                 if (!tribes.isEmpty()) {
-                    Tribe tribe = tribes.get(random.nextInt(tribes.size()));
+                    Tribe tribe = tribes.stream().findFirst().get();
                     SimulationSubject.getInstance().notifyEvent(tribe.getName() + " has sent out a diplomatic mission", SimulationEvent.EventType.POLITICAL);
                     // Implement diplomatic mission effects
                     tribes.stream()
@@ -158,18 +142,19 @@ public class EventSystem {
                 break;
             case "Espionage":
                 if (tribes.size() >= 2) {
-                    Tribe spyingTribe = tribes.get(random.nextInt(tribes.size()));
-                    Tribe targetTribe = tribes.get(random.nextInt(tribes.size()));
-                    if (spyingTribe != targetTribe) {
-                        SimulationSubject.getInstance().notifyEvent(spyingTribe.getName() + " is spying on " + targetTribe.getName(), SimulationEvent.EventType.POLITICAL);
-                        // Implement espionage effects
-
+                    Tribe tribeA = tribes.stream().findFirst().get();
+                    Tribe tribeB = tribes.stream().findFirst().get();
+                    while (tribeB == tribeA) {
+                        tribeB = tribes.stream().findFirst().get();
                     }
+                    SimulationSubject.getInstance().notifyEvent(tribeA.getName() + " is spying on " + tribeB.getName(), SimulationEvent.EventType.POLITICAL);
+                    // Implement espionage effects
+
                 }
                 break;
             case "Convert Digimon":
                 if (!tribes.isEmpty()) {
-                    Tribe convertingTribe = tribes.get(random.nextInt(tribes.size()));
+                    Tribe convertingTribe = tribes.stream().findFirst().get();
                     List<Digimon> unaffiliatedDigimon = tribes.stream()
                             .flatMap(tribe -> tribe.getMembers().stream())
                             .filter(digimon -> digimon.getTribe() != convertingTribe)
@@ -189,13 +174,16 @@ public class EventSystem {
 
             case "Make Peace":
                 if (tribes.size() >= 2) {
-                    Tribe tribe1 = tribes.get(random.nextInt(tribes.size()));
-                    Tribe tribe2 = tribes.get(random.nextInt(tribes.size()));
+                    Tribe tribeA = tribes.stream().findFirst().get();
+                    Tribe tribeB = tribes.stream().findFirst().get();
+                    while (tribeB == tribeA) {
+                        tribeB = tribes.stream().findFirst().get();
+                    }
 
-                    SimulationSubject.getInstance().notifyEvent(tribe1.getName() + " and " + tribe2.getName() + " have made peace", SimulationEvent.EventType.POLITICAL);
+                    SimulationSubject.getInstance().notifyEvent(tribeA.getName() + " and " + tribeB.getName() + " have made peace", SimulationEvent.EventType.POLITICAL);
 
                     // Decrease aggression and increase happiness for both tribes
-                    Stream.concat(tribe1.getMembers().stream(), tribe2.getMembers().stream())
+                    Stream.concat(tribeA.getMembers().stream(), tribeB.getMembers().stream())
                             .forEach(digimon -> {
                                 digimon.setAggression(Math.max(0, digimon.getAggression() - 50));
                             });

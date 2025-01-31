@@ -351,10 +351,7 @@ public class VisualGUI extends Application implements SimulationObserver {
         Platform.runLater(() -> {
             TextArea targetArea;
             int currentTime = world.getTime();
-            if (currentTime - lastClearTime >= 25) {
-                clearAllEvents();
-                lastClearTime = currentTime;
-            }
+
             targetArea = switch (type) {
                 case ATTACK -> attackEventArea;
                 case POLITICAL -> politicalEventArea;
@@ -372,7 +369,12 @@ public class VisualGUI extends Application implements SimulationObserver {
 
             targetArea.setText(newEvents.toString());
             targetArea.positionCaret(0);
+            if (currentTime - lastClearTime >= 25) {
+                clearAllEvents();
+                lastClearTime = currentTime;
+            }
         });
+
     }
 
     private void clearAllEvents() {

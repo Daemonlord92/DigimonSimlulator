@@ -83,8 +83,8 @@ public class TechnologySystem {
                         foodProduced += (int) (baseProduction * technologyBonus);
                         break;
                     case "Builder":
-                        buildingsConstructed += 1 + (getTechnologyLevel("Construction") / 2);
                         if (getTechnologyLevel("Construction") % 10 == 0) {
+                            buildingsConstructed += 1 + (getTechnologyLevel("Construction") / 2);
                             Tribe.buildCity(tribe);
                         }
                         break;
@@ -103,7 +103,6 @@ public class TechnologySystem {
     
             // Apply the results of the work
             tribe.addFood(foodProduced);
-            tribe.addBuildings(buildingsConstructed);
             tribe.setMilitaryStrength(tribe.getMilitaryStrength() + militaryStrength);
             tribe.addResearchPoints(researchPoints);
     

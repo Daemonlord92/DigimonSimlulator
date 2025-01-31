@@ -1,4 +1,7 @@
-package com.horrorcore;
+package com.horrorcore.grid;
+
+import com.horrorcore.entity.Building;
+import com.horrorcore.entity.Digimon;
 
 public class GridCell {
     private Digimon occupant;

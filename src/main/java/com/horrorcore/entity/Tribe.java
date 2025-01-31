@@ -1,4 +1,10 @@
-package com.horrorcore;
+package com.horrorcore.entity;
+
+import com.horrorcore.*;
+import com.horrorcore.systems.building.BuildingSystem;
+import com.horrorcore.systems.events.SimulationEvent;
+import com.horrorcore.systems.events.SimulationSubject;
+import com.horrorcore.systems.TechnologySystem;
 
 import java.util.*;
 

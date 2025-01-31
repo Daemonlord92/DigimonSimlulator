@@ -1,5 +1,8 @@
-package com.horrorcore;
+package com.horrorcore.gui;
 
+import com.horrorcore.entity.Building;
+import com.horrorcore.entity.Digimon;
+import com.horrorcore.grid.GridCell;
 import javafx.scene.layout.VBox;
 import javafx.scene.control.Label;
 import javafx.scene.text.Text;

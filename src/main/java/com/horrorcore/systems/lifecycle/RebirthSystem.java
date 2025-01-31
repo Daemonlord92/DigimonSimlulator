@@ -1,4 +1,8 @@
-package com.horrorcore;
+package com.horrorcore.systems.lifecycle;
+
+import com.horrorcore.systems.events.SimulationEvent;
+import com.horrorcore.systems.events.SimulationSubject;
+import com.horrorcore.entity.Digimon;
 
 import java.util.List;
 

@@ -1,4 +1,6 @@
-package com.horrorcore;
+package com.horrorcore.systems.farming;
+
+import com.horrorcore.entity.Digimon;
 
 import java.util.List;
 

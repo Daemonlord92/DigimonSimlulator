@@ -1,4 +1,11 @@
-package com.horrorcore;
+package com.horrorcore.systems.movement;
+
+import com.horrorcore.systems.events.SimulationEvent;
+import com.horrorcore.systems.events.SimulationSubject;
+import com.horrorcore.entity.Digimon;
+import com.horrorcore.entity.Sector;
+import com.horrorcore.grid.Grid;
+import com.horrorcore.grid.GridCell;
 
 import java.util.*;
 

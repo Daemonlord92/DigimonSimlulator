@@ -1,5 +1,19 @@
 package com.horrorcore;
 
+import com.horrorcore.entity.CelestialDigimon;
+import com.horrorcore.entity.Digimon;
+import com.horrorcore.entity.Sector;
+import com.horrorcore.entity.Tribe;
+import com.horrorcore.gui.VisualGUI;
+import com.horrorcore.systems.TechnologySystem;
+import com.horrorcore.systems.events.*;
+import com.horrorcore.systems.evolution.EvolutionSystem;
+import com.horrorcore.systems.farming.FoodSystem;
+import com.horrorcore.systems.lifecycle.BirthSystem;
+import com.horrorcore.systems.lifecycle.DigimonGenerator;
+import com.horrorcore.systems.lifecycle.RebirthSystem;
+import com.horrorcore.systems.movement.SectorMovement;
+
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;

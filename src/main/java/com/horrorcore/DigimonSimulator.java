@@ -1,5 +1,10 @@
 package com.horrorcore;
 
+import com.horrorcore.entity.CelestialDigimon;
+import com.horrorcore.entity.Digimon;
+import com.horrorcore.gui.VisualGUI;
+import com.horrorcore.systems.events.SimulationSubject;
+import com.horrorcore.systems.lifecycle.DigimonGenerator;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;

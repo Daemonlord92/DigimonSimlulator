@@ -1,4 +1,4 @@
-package com.horrorcore;
+package com.horrorcore.entity;
 
 public class Building {
     private final BuildingType type;

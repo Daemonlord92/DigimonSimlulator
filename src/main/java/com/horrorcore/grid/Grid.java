@@ -1,4 +1,7 @@
-package com.horrorcore;
+package com.horrorcore.grid;
+
+import com.horrorcore.entity.Building;
+import com.horrorcore.entity.Tribe;
 
 import java.util.ArrayList;
 import java.util.List;

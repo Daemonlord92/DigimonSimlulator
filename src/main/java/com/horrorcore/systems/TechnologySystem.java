@@ -1,4 +1,10 @@
-package com.horrorcore;
+package com.horrorcore.systems;
+
+import com.horrorcore.World;
+import com.horrorcore.entity.Digimon;
+import com.horrorcore.entity.Tribe;
+import com.horrorcore.systems.events.SimulationEvent;
+import com.horrorcore.systems.events.SimulationSubject;
 
 import java.util.*;
 

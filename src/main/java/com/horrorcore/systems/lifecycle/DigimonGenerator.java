@@ -1,9 +1,12 @@
-package com.horrorcore;
+package com.horrorcore.systems.lifecycle;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
+import com.horrorcore.entity.CelestialDigimon;
+import com.horrorcore.entity.Digimon;
+
 import java.lang.reflect.Type;
 
 import java.io.InputStream;

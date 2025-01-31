@@ -1,4 +1,7 @@
-package com.horrorcore;
+package com.horrorcore.entity;
+
+import com.horrorcore.systems.events.SimulationEvent;
+import com.horrorcore.systems.events.SimulationSubject;
 
 import java.util.List;
 

@@ -1,4 +1,11 @@
-package com.horrorcore;
+package com.horrorcore.systems.building;
+
+import com.horrorcore.World;
+import com.horrorcore.entity.Building;
+import com.horrorcore.entity.Sector;
+import com.horrorcore.entity.Tribe;
+import com.horrorcore.grid.Grid;
+import com.horrorcore.grid.GridCell;
 
 public class BuildingSystem {
     /**

@@ -1,4 +1,9 @@
-package com.horrorcore;
+package com.horrorcore.systems.events;
+
+import com.horrorcore.World;
+import com.horrorcore.entity.Digimon;
+import com.horrorcore.entity.Sector;
+import com.horrorcore.entity.Tribe;
 
 import java.util.*;
 import java.util.stream.Collectors;

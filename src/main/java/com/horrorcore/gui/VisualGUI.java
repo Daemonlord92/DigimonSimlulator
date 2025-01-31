@@ -1,5 +1,14 @@
-package com.horrorcore;
+package com.horrorcore.gui;
 
+import com.horrorcore.World;
+import com.horrorcore.entity.CelestialDigimon;
+import com.horrorcore.entity.Digimon;
+import com.horrorcore.entity.Sector;
+import com.horrorcore.entity.Tribe;
+import com.horrorcore.grid.Grid;
+import com.horrorcore.grid.GridCell;
+import com.horrorcore.systems.events.SimulationEvent;
+import com.horrorcore.systems.events.SimulationSubject;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;

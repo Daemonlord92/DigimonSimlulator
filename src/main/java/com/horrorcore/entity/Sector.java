@@ -1,4 +1,8 @@
-package com.horrorcore;
+package com.horrorcore.entity;
+
+import com.horrorcore.grid.Grid;
+import com.horrorcore.grid.GridCell;
+import com.horrorcore.grid.PathFinder;
 
 import java.util.ArrayList;
 import java.util.List;

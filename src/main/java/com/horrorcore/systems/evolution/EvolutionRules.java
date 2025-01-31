@@ -1,4 +1,4 @@
-package com.horrorcore;
+package com.horrorcore.systems.evolution;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;

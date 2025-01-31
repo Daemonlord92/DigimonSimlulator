@@ -1,4 +1,9 @@
-package com.horrorcore;
+package com.horrorcore.systems.events;
+
+import com.horrorcore.*;
+import com.horrorcore.entity.Digimon;
+import com.horrorcore.entity.Tribe;
+import com.horrorcore.systems.lifecycle.DigimonGenerator;
 
 import java.util.List;
 import java.util.Random;

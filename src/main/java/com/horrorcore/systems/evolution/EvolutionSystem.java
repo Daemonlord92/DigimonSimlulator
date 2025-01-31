@@ -1,4 +1,6 @@
-package com.horrorcore;
+package com.horrorcore.systems.evolution;
+
+import com.horrorcore.entity.Digimon;
 
 public class EvolutionSystem {
     /**

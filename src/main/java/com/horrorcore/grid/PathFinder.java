@@ -1,4 +1,4 @@
-package com.horrorcore;
+package com.horrorcore.grid;
 
 import java.util.*;
 

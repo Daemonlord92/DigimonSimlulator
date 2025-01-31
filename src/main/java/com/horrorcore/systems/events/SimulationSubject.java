@@ -1,4 +1,7 @@
-package com.horrorcore;
+package com.horrorcore.systems.events;
+
+import com.horrorcore.gui.SimulationObserver;
+import com.horrorcore.World;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

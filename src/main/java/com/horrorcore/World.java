@@ -5,7 +5,7 @@ import com.horrorcore.entity.Digimon;
 import com.horrorcore.entity.Sector;
 import com.horrorcore.entity.Tribe;
 import com.horrorcore.gui.VisualGUI;
-import com.horrorcore.systems.TechnologySystem;
+import com.horrorcore.systems.tech.TechnologySystem;
 import com.horrorcore.systems.events.*;
 import com.horrorcore.systems.evolution.EvolutionSystem;
 import com.horrorcore.systems.farming.FoodSystem;

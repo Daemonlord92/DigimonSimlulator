@@ -1,4 +1,4 @@
-package com.horrorcore.systems;
+package com.horrorcore.systems.tech;
 
 import com.horrorcore.World;
 import com.horrorcore.entity.Digimon;

@@ -6,7 +6,7 @@
 
     <groupId>com.horrorcore</groupId>
     <artifactId>digimon-simulator</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -14,6 +14,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javafx.version>17.0.6</javafx.version>
         <javafx.maven.plugin.version>0.0.8</javafx.maven.plugin.version>
+        <main.class>com.horrorcore.DigimonSimulator</main.class>
+        <app.name>DigimonSimulator</app.name>
     </properties>
 
     <dependencies>
@@ -33,6 +35,7 @@
             <version>2.8.9</version>
         </dependency>
     </dependencies>
+
     <build>
         <plugins>
             <plugin>
@@ -47,7 +50,10 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>${javafx.maven.plugin.version}</version>
                 <configuration>
-                    <mainClass>com.horrorcore.DigimonSimulator</mainClass>
+                    <mainClass>${main.class}</mainClass>
+                    <jlinkImageName>digimon-simulator</jlinkImageName>
+                    <launcher>launcher</launcher>
+                    <mainClass>${main.class}</mainClass>
                 </configuration>
             </plugin>
             <plugin>
@@ -63,7 +69,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.horrorcore.DigimonSimulator</mainClass>
+                                    <mainClass>${main.class}</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
@@ -72,4 +78,44 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>package-exe</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.panteleyev</groupId>
+                        <artifactId>jpackage-maven-plugin</artifactId>
+                        <version>1.4.0</version>
+                        <configuration>
+                            <name>${app.name}</name>
+                            <appVersion>${project.version}</appVersion>
+                            <type>EXE</type>
+                            <mainClass>${main.class}</mainClass>
+                            <mainJar>${project.build.finalName}.jar</mainJar>
+                            <input>${project.build.directory}</input>
+                            <destination>C:\DigimonSimulator</destination>
+                            <javaOptions>
+                                <option>-Dfile.encoding=UTF-8</option>
+                            </javaOptions>
+                            <arguments>
+                                <argument>--win-console</argument>
+                                <argument>--win-shortcut</argument>
+                            </arguments>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>win</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jpackage</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

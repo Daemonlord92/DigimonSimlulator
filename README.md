@@ -30,6 +30,61 @@ The Digimon Simulator is a sophisticated Java-based project that creates a livin
 - Special abilities including healing and food provision
 - Immunity to death and aging
 
+### Evolution Lines
+The simulator includes multiple complete evolution lines, each with unique characteristics:
+
+1. Classic Lines:
+   - Agumon Line (Balanced): Botamon → Koromon → Agumon → Greymon → MetalGreymon → WarGreymon
+   - Gabumon Line (Physical): Punimon → Tsunomon → Gabumon → Garurumon → WereGarurumon → MetalGarurumon
+   - Patamon Line (Holy): Poyomon → Tokomon → Patamon → Angemon → MagnaAngemon → Seraphimon
+
+2. Nature/Plant Line:
+   - Palmon Line: Yuramon → Tanemon → Palmon → Togemon → Lillymon → Rosemon
+   - Balanced evolution line focusing on nature-based abilities
+
+3. Dark/Virus Line:
+   - DemiDevimon Line: Zurumon → Pagumon → DemiDevimon → Devimon → Myotismon → VenomMyotismon
+   - High aggression evolution path with powerful offensive capabilities
+
+4. Machine/Android Line:
+   - Hagurumon Line: MetalKoromon → Kapurimon → Hagurumon → Guardromon → Andromon → HiAndromon
+   - Defensive evolution line with high health stats
+
+5. Aquatic/Marine Line:
+   - Gomamon Line: Pichimon → Bukamon → Gomamon → Ikkakumon → Zudomon → Plesiomon
+   - Versatile evolution line with balanced stats
+
+## Technical Features
+
+### Visual Interface (JavaFX)
+- Real-time visualization of the Digimon world
+- Grid-based sector display with color-coded cells
+- Interactive UI with tabbed interface for:
+   - Sector information and grid visualization
+   - Tribe status and management
+   - Event logging and monitoring
+- Custom styling for a retro digital aesthetic
+- Real-time updates of Digimon positions and states
+
+### Grid System
+- Each sector contains a grid of cells
+- Cells can contain Digimon, buildings, or remain empty
+- Pathfinding system for intelligent movement
+- Border cells for sector transitions
+- Building placement with proximity rules
+
+### Building System
+- Multiple building types with different functions
+- Ownership tracking by tribes
+- Influence radius mechanics
+- Automatic cleanup on tribe dissolution
+
+### Movement Mechanics
+- Grid-based pathfinding within sectors
+- Strategic movement toward owned buildings
+- Sector transition through border cells
+- Tribe-influenced movement patterns
+
 ## Project Structure
 ```
 digimon-simulator/
@@ -54,33 +109,18 @@ digimon-simulator/
 └── README.md
 ```
 
-## Technical Features
-
-### Grid System
-- Each sector contains a grid of cells
-- Cells can contain Digimon, buildings, or remain empty
-- Pathfinding system for intelligent movement
-- Border cells for sector transitions
-- Building placement with proximity rules
-
-### Building System
-- Multiple building types with different functions
-- Ownership tracking by tribes
-- Influence radius mechanics
-- Automatic cleanup on tribe dissolution
-
-### Movement Mechanics
-- Grid-based pathfinding within sectors
-- Strategic movement toward owned buildings
-- Sector transition through border cells
-- Tribe-influenced movement patterns
-
 ## Getting Started
 
 ### Prerequisites
 - Java JDK 17 or higher
+- JavaFX SDK 17.0.6 or higher
 - Maven
 - Minimum 4GB RAM recommended
+
+### System Requirements
+- Operating System: Windows 10/11, macOS 10.15+, or Linux
+- Graphics: OpenGL 2.0 capable system
+- Display: Minimum resolution of 1200x800 pixels
 
 ### Installation
 1. Clone the repository:
@@ -91,7 +131,8 @@ digimon-simulator/
    ```bash
    cd digimon-simulator
    ```
-3. Build with Maven:
+3. Ensure JavaFX SDK is properly installed and JAVA_HOME is set
+4. Build with Maven:
    ```bash
    mvn clean install
    ```
@@ -99,12 +140,39 @@ digimon-simulator/
 ### Running the Simulator
 1. Launch from the command line:
    ```bash
-   java -jar target/digimon-simulator-1.0-SNAPSHOT.jar
+   java --module-path /path/to/javafx-sdk/lib --add-modules javafx.controls,javafx.fxml -jar target/digimon-simulator-1.0-SNAPSHOT.jar
+   ```
+   Or use the Maven plugin:
+   ```bash
+   mvn javafx:run
    ```
 2. The simulation will automatically initialize with:
-    - 100 regular Digimon
-    - 10 Celestial Digimon
-    - 10 sectors with interconnected grids
+   - 100 regular Digimon
+   - 10 Celestial Digimon
+   - 10 sectors with interconnected grids
+   - Full graphical interface
+
+### User Interface Guide
+1. Main Window
+   - World Info: Current time, age, and global statistics
+   - Sector View: Grid-based visualization of each sector
+   - Event Log: Real-time updates of world events
+
+2. Sector Tab
+   - Click on cells to view detailed information
+   - Digimon are represented as green circles
+   - Buildings shown as blue squares with type indicators
+   - Border cells in dark gray, blocked cells in red
+
+3. Tribes Tab
+   - List of all tribes and their current status
+   - Member counts and territory information
+   - Technology levels and military strength
+
+4. Events Tab
+   - Attack events in real-time
+   - Political events and tribe interactions
+   - Natural events and world changes
 
 ## Configuration
 
@@ -129,10 +197,40 @@ digimon-simulator/
    }
    ```
 
+### Evolution Stages
+- Fresh: Initial stage with basic stats
+- In-Training: First evolution with slightly improved stats
+- Rookie: Basic combat-capable form
+- Champion: Significant power increase
+- Ultimate: Advanced form with specialized abilities
+- Mega: Final evolution with maximum potential
+
+### Customizing the Interface
+The visual appearance can be modified through the `styles.css` file:
+```css
+/* Example of customizing the interface */
+.root {
+    -fx-font-family: 'Courier New';
+    -fx-background-color: #000000;
+}
+```
+
 ### Modifying World Behavior
 - Adjust grid size in `Sector.java`
 - Modify event probabilities in `EventSystem.java`
 - Configure building types and effects in `Building.java`
+
+## Troubleshooting
+Common issues and solutions:
+1. JavaFX not found
+   ```bash
+   Error: JavaFX runtime components are missing
+   ```
+   Solution: Ensure JavaFX SDK is properly installed and module path is correct
+
+2. Display scaling issues
+   - Windows: Adjust your display scaling settings
+   - macOS: Use the recommended display resolution
 
 ## Contributing
 Contributions are welcome! Please read our contributing guidelines before submitting pull requests.

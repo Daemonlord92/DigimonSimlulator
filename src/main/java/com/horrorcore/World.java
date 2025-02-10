@@ -42,6 +42,8 @@ public class World {
     private final List<Integer> agesRequired = List.of(500, 1000, 1500, 2000);
     private volatile long lastUpdateTime = 0;
     private WorldState savedState;
+    private Thread watchdogThread;
+    private final AtomicBoolean watchdogRunning = new AtomicBoolean(false);
 
     /**
      * Constructs a new World object, initializing all its components.
@@ -204,8 +206,10 @@ public class World {
      */
     public void simulate(VisualGUI gui) {
             System.out.println("Simulation started with GUI: " + gui);
-        Thread watchdog = getWatchdog();
-        watchdog.start();
+
+        if (!watchdogRunning.get()) {
+            startWatchdog();
+        }
             while (running.get()) {
                 lastUpdateTime = System.currentTimeMillis();
                 boolean lockAcquired = false;
@@ -347,13 +351,14 @@ public class World {
         }
     }
 
-    private Thread getWatchdog() {
-        Thread watchdog = new Thread(() -> {
-            while (running.get()) {
+    private void startWatchdog() {
+        watchdogRunning.set(true);
+        watchdogThread = new Thread(() -> {
+            while (watchdogRunning.get()) {
                 try {
-                    Thread.sleep(10000); // Check every 10 seconds
+                    Thread.sleep(10000);
                     if (System.currentTimeMillis() - lastUpdateTime > 15000) {
-                        LOGGER.warning("Simulation seems to be frozen. Last update was more than 15 seconds ago.");
+                        LOGGER.warning("Simulation frozen!");
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -361,8 +366,8 @@ public class World {
                 }
             }
         });
-        watchdog.setDaemon(true);
-        return watchdog;
+        watchdogThread.setDaemon(true);
+        watchdogThread.start();
     }
 
     /**

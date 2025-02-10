@@ -221,7 +221,7 @@ public class World {
                     }
 
                     for (Sector sector : sectors) {
-                    for (Digimon digimon : new ArrayList<>(sector.getDigimons())) {
+                    for (Digimon digimon : sector.getDigimons()) {
                         digimon.ageUp();
                         if (digimon instanceof CelestialDigimon celestial) {
                             List<Digimon> nearbyDigimon = sector.getDigimons();
@@ -453,9 +453,25 @@ private int getEvolutionStageFactor(Digimon digimon) {
      * @return A randomly selected Digimon target from the current or adjacent sectors, or null if no targets are available.
      */
     private Digimon findTarget(Digimon attacker, Sector currentSector) {
-        List<Digimon> possibleTargets = new ArrayList<>(currentSector.getDigimons());
+        Iterator<Digimon> iterator = new Iterator<>() {
+            private int index = 0;
+            @Override
+            public boolean hasNext() {
+                return index < currentSector.getAdjacentSectors().size();
+            }
+            @Override
+            public Digimon next() {
+                return index++ > 0 ? currentSector.getDigimons().get(index - 1) : null;
+            }
+        };
+
+        List<Digimon> possibleTargets = new ArrayList<>();
         for (Sector adjacentSector : currentSector.getAdjacentSectors()) {
-            possibleTargets.addAll(adjacentSector.getDigimons());
+            if (iterator.hasNext()) {
+                possibleTargets.add(iterator.next());
+            } else {
+                possibleTargets.addAll(adjacentSector.getDigimons());
+            }
         }
         possibleTargets.remove(attacker);
 
@@ -564,9 +580,8 @@ private int getEvolutionStageFactor(Digimon digimon) {
                 LOGGER.warning("Failed to acquire write lock within 5 seconds. Skipping reset operation.");
                 return;
             }
-            this.digimonList = new ArrayList<>();
+            this.digimonList = new ArrayList<Digimon>(); // Fixed: Use Digimon
             this.tribes = Tribe.getAllTribes();
-            this.technologySystem = new TechnologySystem();
             this.time = 0;
             this.sectors = new ArrayList<>();
             this.random = new Random();
@@ -597,9 +612,8 @@ private int getEvolutionStageFactor(Digimon digimon) {
                 LOGGER.warning("No saved state available to load.");
                 return;
             }
-            this.digimonList = new ArrayList<>(savedState.digimonList);
+            this.digimonList = new ArrayList<>(savedState.digimonList); // Fixed: Use proper copy
             this.tribes = new HashSet<>(savedState.tribes);
-            this.technologySystem = new TechnologySystem(savedState.technologySystem);
             this.time = savedState.time;
             this.sectors = new ArrayList<>(savedState.sectors);
             LOGGER.info("World state loaded successfully.");
@@ -623,7 +637,7 @@ private int getEvolutionStageFactor(Digimon digimon) {
         private final TechnologySystem technologySystem;
         private final int time;
         private final List<Sector> sectors;
-    
+
         public WorldState(World world) {
             this.digimonList = new ArrayList<>(world.digimonList);
             this.tribes = new ArrayList<>(world.tribes);

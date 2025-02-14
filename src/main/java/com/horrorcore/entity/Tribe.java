@@ -20,6 +20,9 @@ public class Tribe {
     private int totalFood;
     private int militaryStrength;
     private int researchPoints;
+    private final Set<Digimon> recentlyFed = new HashSet<>();
+    private long lastFeedTime = 0;
+    private static final long FEED_COOLDOWN = 1000;
 
     // Constructors
 
@@ -114,6 +117,11 @@ public class Tribe {
     }
 
     public void feedTribe() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastFeedTime < FEED_COOLDOWN) {
+            return;
+        }
+
         int baseFoodPerMember = 5;
         int foodToFeed = members.size() * baseFoodPerMember;
         int foodThreshold = members.size() * baseFoodPerMember * 3; // 3 days worth of food
@@ -123,23 +131,50 @@ public class Tribe {
                 // If we have more than the threshold, consume more food
                 int extraFood = Math.min((totalFood - foodThreshold) / 2, foodToFeed);
                 totalFood -= (foodToFeed + extraFood);
+                members.stream()
+                        .filter(digimon -> !recentlyFed.contains(digimon))
+                        .forEach(digimon -> {
+                            digimon.setHunger(Math.max(0, digimon.getHunger() - 30));
+                            recentlyFed.add(digimon);
+                        });
                 SimulationSubject.getInstance().notifyEvent(getName() + " has well fed their tribe with extra food!", SimulationEvent.EventType.POLITICAL);
             } else {
                 // Regular feeding
                 totalFood -= foodToFeed;
-                SimulationSubject.getInstance().notifyEvent(getName() + " has fed their tribe!", SimulationEvent.EventType.POLITICAL);
+                members.stream()
+                        .filter(digimon -> !recentlyFed.contains(digimon))
+                        .forEach(digimon -> {
+                            digimon.setHunger(Math.max(0, digimon.getHunger() - 20));
+                            recentlyFed.add(digimon);
+                        });
+                SimulationSubject.getInstance().notifyEvent(
+                        getName() + " has fed their tribe!",
+                        SimulationEvent.EventType.POLITICAL
+                );
             }
+            lastFeedTime = currentTime;
         } else if (totalFood > 0) {
             // Not enough food, but feed what we can
             int partialFood = totalFood;
             totalFood = 0;
-            SimulationSubject.getInstance().notifyEvent(getName() + " has partially fed their tribe with " + partialFood + " food!", SimulationEvent.EventType.POLITICAL);
-            for (Digimon digimon : members) {
-                digimon.eat();
-            }
+            members.stream()
+                    .filter(digimon -> !recentlyFed.contains(digimon))
+                    .forEach(digimon -> {
+                        digimon.setHunger(Math.max(0, digimon.getHunger() - 10));
+                        recentlyFed.add(digimon);
+                    });
+            SimulationSubject.getInstance().notifyEvent(
+                    getName() + " has partially fed their tribe with " + partialFood + " food!",
+                    SimulationEvent.EventType.POLITICAL
+            );
+            lastFeedTime = currentTime;
         } else {
             SimulationSubject.getInstance().notifyEvent(getName() + " has no food to feed their tribe!", SimulationEvent.EventType.POLITICAL);
         }
+    }
+
+    public void clearFeedingStatus() {
+        recentlyFed.clear();
     }
 
     public void produceFood() {

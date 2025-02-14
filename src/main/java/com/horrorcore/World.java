@@ -211,6 +211,7 @@ public class World {
             startWatchdog();
         }
             while (running.get()) {
+                clearTribeFeedingStatus();
                 lastUpdateTime = System.currentTimeMillis();
                 boolean lockAcquired = false;
                 try {
@@ -249,18 +250,18 @@ public class World {
                     for (int i = 0; i < 5; i++) {
                         DigimonGenerator.generateRandomDigimon();
                     }
-                    INSTANCE.getTribes().forEach(tribe -> {
-                        tribe.getMembers().forEach(digimon -> {
-                            if (digimon.getProfession() == null || random.nextDouble() < 0.1) { // 10% chance to reassign profession
-                                String randomProfession = tribe.getTechnologySystem().getRandomProfession();
-                                if (randomProfession != null) {
-                                    tribe.getTechnologySystem().assignProfession(digimon, randomProfession);
-                                    LOGGER.info(digimon.getName() + " assigned profession: " + randomProfession);
+                        INSTANCE.getTribes().forEach(tribe -> {
+                            tribe.getMembers().forEach(digimon -> {
+                                if (digimon.getProfession() == null || random.nextDouble() < 0.1) {
+                                    String randomProfession = tribe.getTechnologySystem().getRandomProfession();
+                                    if (randomProfession != null) {
+                                        tribe.getTechnologySystem().assignProfession(digimon, randomProfession);
+                                        LOGGER.info(digimon.getName() + " assigned profession: " + randomProfession);
+                                    }
                                 }
-                            }
-                        });
-                        tribe.getTechnologySystem().performWork(INSTANCE);
-                        tribe.feedTribe();
+                            });
+                            tribe.getTechnologySystem().performWork(INSTANCE);
+                            tribe.feedTribe();
                     });
 
                     List<Digimon> digimons = sector.getDigimons();
@@ -441,6 +442,12 @@ private int getEvolutionStageFactor(Digimon digimon) {
         default -> 2; // Default to Rookie level resilience
     };
 }
+
+    private void clearTribeFeedingStatus() {
+        for (Tribe tribe : tribes) {
+            tribe.clearFeedingStatus();
+        }
+    }
 
     /**
      * Finds a potential target for the attacking Digimon within the current sector or adjacent sectors.

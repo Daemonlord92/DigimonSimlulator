@@ -6,6 +6,7 @@ import com.horrorcore.systems.events.SimulationSubject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 
 public class Digimon {
     private String name;
@@ -18,6 +19,7 @@ public class Digimon {
     private int friendship;
     private String profession;
     private List<Digimon> friends;
+    private PersonalityTraits personality;
 
     /**
      * Constructs a new Digimon with the specified attributes.
@@ -33,6 +35,7 @@ public class Digimon {
         this.friendship = 0;
         this.profession = null;
         this.friends = new ArrayList<>();
+        this.personality = new PersonalityTraits();
     }
 
     /**
@@ -63,38 +66,63 @@ public class Digimon {
     }
 
     public void attack(Digimon target) {
-        if (this.aggression > 50) {
+        // More aggressive Digimon deal more damage
+        if (this.aggression > 50 || Math.random() < personality.getAggression()) {
             int damage = switch (this.stage) {
-                case "Rookie" -> 20;
-                case "Champion" -> 30;
-                case "Ultimate" -> 40;
-                case "Mega" -> 50;
-                default -> 10;
+                case "Rookie" -> (int)(20 * (1 + personality.getAggression() * 0.5));
+                case "Champion" -> (int)(30 * (1 + personality.getAggression() * 0.5));
+                case "Ultimate" -> (int)(40 * (1 + personality.getAggression() * 0.5));
+                case "Mega" -> (int)(50 * (1 + personality.getAggression() * 0.5));
+                default -> (int)(10 * (1 + personality.getAggression() * 0.5));
             };
             target.health -= damage;
-            SimulationSubject.getInstance().notifyEvent(this.name + " attacked " + target.name + "!", SimulationEvent.EventType.ATTACK);
+
+            String attackDesc = personality.getAggression() > 0.7 ?
+                    " viciously attacked " : " attacked ";
+
+            SimulationSubject.getInstance().notifyEvent(
+                    this.name + attackDesc + target.name + "!",
+                    SimulationEvent.EventType.ATTACK
+            );
         }
     }
 
+    public boolean shouldExplore() {
+        // Curious Digimon explore more often
+        return Math.random() < personality.getCuriosity() * 1.2;
+    }
+
     public void joinTribe(String tribeName) {
-        if (tribeName == null) {
-            throw new IllegalArgumentException("Tribe name cannot be null.");
-        }
-        for (Tribe tribe : Tribe.getAllTribes()) {
-            if (tribe.getName().equals(tribeName)) {
-                this.tribe = tribe;
-                tribe.getMembers().add(this);
-                SimulationSubject.getInstance().notifyEvent(this.name + " joined the " + tribeName + " tribe.", SimulationEvent.EventType.POLITICAL);
-                break;
+        if (tribeName == null) return;
+
+        // More social Digimon join tribes more readily
+        if (Math.random() < personality.getSociability() * 1.5) {
+            for (Tribe tribe : Tribe.getAllTribes()) {
+                if (tribe.getName().equals(tribeName)) {
+                    this.tribe = tribe;
+                    tribe.getMembers().add(this);
+                    SimulationSubject.getInstance().notifyEvent(
+                            this.name + " eagerly joined the " + tribeName + " tribe.",
+                            SimulationEvent.EventType.POLITICAL
+                    );
+                    break;
+                }
             }
         }
     }
 
     public void leaveTribe() {
-        if (this.tribe!= null) {
+        // Loyal Digimon are less likely to leave
+        if (this.tribe != null && Math.random() > personality.getLoyalty()) {
             this.tribe.getMembers().remove(this);
+            String leaveDesc = personality.getLoyalty() < 0.3 ?
+                    " abruptly abandoned " : " left ";
+
+            SimulationSubject.getInstance().notifyEvent(
+                    this.name + leaveDesc + "the tribe.",
+                    SimulationEvent.EventType.POLITICAL
+            );
             this.tribe = null;
-            SimulationSubject.getInstance().notifyEvent(this.name + " left the tribe.", SimulationEvent.EventType.POLITICAL);
         }
     }
 
@@ -189,5 +217,30 @@ public class Digimon {
     @Override
     public int hashCode() {
         return Objects.hash(name, age, health, hunger, aggression, stage);
+    }
+
+    public PersonalityTraits getPersonality() {
+        return personality;
+    }
+
+    public class PersonalityTraits {
+        private double sociability;    // Affects tribe joining/leaving
+        private double aggression;     // Affects combat initiation
+        private double curiosity;      // Affects exploration
+        private double loyalty;        // Affects tribe dedication
+
+        public PersonalityTraits() {
+            Random rand = new Random();
+            this.sociability = rand.nextDouble();
+            this.aggression = rand.nextDouble();
+            this.curiosity = rand.nextDouble();
+            this.loyalty = rand.nextDouble();
+        }
+
+        // Getters
+        public double getSociability() { return sociability; }
+        public double getAggression() { return aggression; }
+        public double getCuriosity() { return curiosity; }
+        public double getLoyalty() { return loyalty; }
     }
 }

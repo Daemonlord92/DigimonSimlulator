@@ -30,14 +30,15 @@ public class SectorMovement {
     }
 
     private static boolean shouldTransitionSector(Digimon digimon, Random random) {
-        // Young or healthy Digimon are more likely to explore
         boolean isYoung = digimon.getAge() <= 25;
         boolean isHealthy = digimon.getHealth() >= 15;
 
-        // Base 30% chance of transition, modified by age and health
-        double transitionChance = 0.3;
+        // Base chance modified by curiosity
+        double transitionChance = 0.3 * (1 + digimon.getPersonality().getCuriosity());
+
         if (isYoung) transitionChance += 0.2;
         if (isHealthy) transitionChance += 0.1;
+        if (digimon.shouldExplore()) transitionChance += 0.2;
 
         return random.nextDouble() < transitionChance;
     }

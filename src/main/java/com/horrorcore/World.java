@@ -14,6 +14,10 @@ import com.horrorcore.systems.lifecycle.BirthSystem;
 import com.horrorcore.systems.lifecycle.DigimonGenerator;
 import com.horrorcore.systems.lifecycle.RebirthSystem;
 import com.horrorcore.systems.movement.SectorMovement;
+import com.horrorcore.systems.persistence.SaveSystem;
+import com.horrorcore.systems.persistence.WorldSnapshot;
+import com.horrorcore.systems.persistence.SectorSnapshot;
+import com.horrorcore.systems.persistence.TribeSnapshot;
 
 import java.util.*;
 import java.util.List;
@@ -47,7 +51,6 @@ public class World {
         SimulationConfig.AGE_ADVANCEMENT_TIMES[3]
     );
     private volatile long lastUpdateTime = 0;
-    private WorldState savedState;
     private Thread watchdogThread;
     private final AtomicBoolean watchdogRunning = new AtomicBoolean(false);
 
@@ -532,6 +535,10 @@ private int getEvolutionStageFactor(Digimon digimon) {
         return time;
     }
 
+    public void setTime(int time) {
+        this.time = time;
+    }
+
     public int getBuildings() {
         return tribes.stream().mapToInt(Tribe::getBuildings).sum();
     }
@@ -570,24 +577,19 @@ private int getEvolutionStageFactor(Digimon digimon) {
     public Set<Tribe> getTribes() {
         return tribes;
     }
+    
+    /**
+     * Saves the current world state to a JSON file.
+     */
     public void saveState() {
-        boolean lockAcquired = false;
-        try {
-            lockAcquired = worldLock.writeLock().tryLock(5, TimeUnit.SECONDS);
-            if (!lockAcquired) {
-                LOGGER.warning("Failed to acquire write lock within 5 seconds. Skipping saveState operation.");
-                return;
-            }
-            this.savedState = new WorldState(this);
-            LOGGER.info("World state saved successfully.");
-        } catch (InterruptedException e) {
-            LOGGER.log(Level.WARNING, "Interrupted while trying to acquire lock for saveState", e);
-            Thread.currentThread().interrupt();
-        } finally {
-            if (lockAcquired) {
-                worldLock.writeLock().unlock();
-            }
-        }
+        SaveSystem.saveToFile(this);
+    }
+
+    /**
+     * Saves the current world state to a specific file.
+     */
+    public void saveState(String filename) {
+        SaveSystem.saveToFile(this, filename);
     }
 
     /**
@@ -602,7 +604,7 @@ private int getEvolutionStageFactor(Digimon digimon) {
                 return;
             }
             this.digimonList = new ArrayList<Digimon>(); // Fixed: Use Digimon
-            this.tribes = Tribe.getAllTribes();
+            this.tribes = new HashSet<>();
             this.time = 0;
             this.sectors = new ArrayList<>();
             this.random = new Random();
@@ -619,27 +621,74 @@ private int getEvolutionStageFactor(Digimon digimon) {
     }
 
     /**
-     * Loads a previously saved state of the world.
+     * Loads a previously saved world state from the default file.
      */
     public void loadState() {
+        WorldSnapshot snapshot = SaveSystem.loadFromFile();
+        if (snapshot != null) {
+            applySnapshot(snapshot);
+        }
+    }
+
+    /**
+     * Loads a previously saved world state from a specific file.
+     */
+    public void loadState(String filename) {
+        WorldSnapshot snapshot = SaveSystem.loadFromFile(filename);
+        if (snapshot != null) {
+            applySnapshot(snapshot);
+        }
+    }
+
+    /**
+     * Applies a loaded snapshot to this World instance.
+     */
+    private void applySnapshot(WorldSnapshot snapshot) {
         boolean lockAcquired = false;
         try {
             lockAcquired = worldLock.writeLock().tryLock(5, TimeUnit.SECONDS);
             if (!lockAcquired) {
-                LOGGER.warning("Failed to acquire write lock within 5 seconds. Skipping loadState operation.");
+                LOGGER.warning("Failed to acquire write lock for loadState");
                 return;
             }
-            if (this.savedState == null) {
-                LOGGER.warning("No saved state available to load.");
-                return;
+            
+            // Reset and restore world state
+            reset();
+            
+            // Restore sectors and Digimon
+            List<Sector> restoredSectors = this.getSectors();
+            for (int i = 0; i < Math.min(snapshot.getSectors().size(), restoredSectors.size()); i++) {
+                SectorSnapshot sectorSnapshot = snapshot.getSectors().get(i);
+                Sector sector = restoredSectors.get(i);
+                sectorSnapshot.restoreToSector(sector);
             }
-            this.digimonList = new ArrayList<>(savedState.digimonList); // Fixed: Use proper copy
-            this.tribes = new HashSet<>(savedState.tribes);
-            this.time = savedState.time;
-            this.sectors = new ArrayList<>(savedState.sectors);
-            LOGGER.info("World state loaded successfully.");
+            
+            // Restore time
+            this.time = snapshot.getTime();
+            
+            // Restore technology age
+            String currentAge = snapshot.getCurrentAge();
+            int maxAdvances = 10; // Safety limit
+            int advances = 0;
+            while (!this.technologySystem.getCurrentAge().equals(currentAge) && advances < maxAdvances) {
+                this.technologySystem.advanceAge();
+                advances++;
+            }
+            
+            if (advances >= maxAdvances && !this.technologySystem.getCurrentAge().equals(currentAge)) {
+                LOGGER.warning("Could not restore technology age to " + currentAge + 
+                             ", stopped at " + this.technologySystem.getCurrentAge());
+            }
+            
+            // Restore tribes (simplified - just store the snapshot data)
+            for (TribeSnapshot tribeSnapshot : snapshot.getTribes()) {
+                tribeSnapshot.restoreToWorld(this);
+            }
+            
+            LOGGER.info("World state loaded successfully");
+            
         } catch (InterruptedException e) {
-            LOGGER.log(Level.WARNING, "Interrupted while trying to acquire lock for loadState", e);
+            LOGGER.log(Level.WARNING, "Interrupted while loading state", e);
             Thread.currentThread().interrupt();
         } finally {
             if (lockAcquired) {
@@ -648,23 +697,14 @@ private int getEvolutionStageFactor(Digimon digimon) {
         }
     }
 
-    public boolean isInitialized() {
-        return digimonList != null && tribes != null && technologySystem != null && sectors != null;
+    /**
+     * Lists all available save files.
+     */
+    public String[] listSaveFiles() {
+        return SaveSystem.listSaveFiles();
     }
 
-    private static class WorldState {
-        private final List<Digimon> digimonList;
-        private final List<Tribe> tribes;
-        private final TechnologySystem technologySystem;
-        private final int time;
-        private final List<Sector> sectors;
-
-        public WorldState(World world) {
-            this.digimonList = new ArrayList<>(world.digimonList);
-            this.tribes = new ArrayList<>(world.tribes);
-            this.technologySystem = new TechnologySystem(world.technologySystem);
-            this.time = world.time;
-            this.sectors = new ArrayList<>(world.sectors);
-        }
+    public boolean isInitialized() {
+        return digimonList != null && tribes != null && technologySystem != null && sectors != null;
     }
 }

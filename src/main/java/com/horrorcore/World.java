@@ -260,7 +260,7 @@ public class World {
                             }
 
                             if (digimon.getAge() <= SimulationConfig.MOVEMENT_AGE_THRESHOLD || 
-                                digimon.getHealth() >= SimulationConfig.MOVEMENT_HEALTH_THRESHOLD && random.nextBoolean()) {
+                                (digimon.getHealth() >= SimulationConfig.MOVEMENT_HEALTH_THRESHOLD && random.nextBoolean())) {
                                 SectorMovement.moveDigimon(digimon, sector, random);
                             }
                         }
@@ -272,7 +272,7 @@ public class World {
                                 if (random.nextDouble() < SimulationConfig.BIRTH_PROBABILITY_LOW) {
                                     BirthSystem.randomBirth(digimons);
                                     totalBirths++;
-                                    if (random.nextDouble() < SimulationConfig.SECOND_BIRTH_PROBABILITY_LOW) { // 50% chance of second birth
+                                    if (random.nextDouble() < SimulationConfig.SECOND_BIRTH_PROBABILITY_LOW) {
                                         BirthSystem.randomBirth(digimons);
                                         totalBirths++;
                                     }

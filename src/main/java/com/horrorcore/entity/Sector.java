@@ -16,6 +16,7 @@ public class Sector {
     private final List<Sector> adjacentSectors;
     private final Grid grid;
     private static final int DEFAULT_GRID_SIZE = 20;
+    // Position cache for O(1) digimon lookups. Thread safety is ensured by World's worldLock.
     private final Map<Digimon, GridCell> digimonPositions = new HashMap<>();
 
     public Sector(String name) {

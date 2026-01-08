@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 public class World {
     private static World INSTANCE;
     private static final Logger LOGGER = Logger.getLogger(World.class.getName());
+    private static final int EMPTY_SECTOR_REPOPULATION_INTERVAL = 10; // Ticks between empty sector checks
     private List<Digimon> digimonList;
     private Set<Tribe> tribes;
     private TechnologySystem technologySystem;
@@ -276,7 +277,7 @@ public class World {
                         EventSystem.triggerRandomEvent(INSTANCE);
                     }
 
-                    if (time % 10 == 0 && digimons.isEmpty()) {
+                    if (time % EMPTY_SECTOR_REPOPULATION_INTERVAL == 0 && digimons.isEmpty()) {
                         for (int i = 0; i < 5; i++) {
                             Digimon newDigimon = DigimonGenerator.generateRandomDigimon();
                             sector.addDigimon(newDigimon);

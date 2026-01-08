@@ -60,31 +60,11 @@ public class WorldSnapshot {
     
     /**
      * Applies this snapshot to a World instance.
-     * Note: This creates a new World instance rather than modifying the existing one.
+     * Note: This is now handled by World.applySnapshot() method.
+     * This method is kept for backward compatibility.
      */
     public World toWorld() {
-        World world = World.getInstance();
-        
-        // Reset world state
-        world.reset();
-        
-        // Restore sectors and Digimon
-        List<Sector> restoredSectors = world.getSectors();
-        for (int i = 0; i < Math.min(sectors.size(), restoredSectors.size()); i++) {
-            SectorSnapshot snapshot = sectors.get(i);
-            Sector sector = restoredSectors.get(i);
-            snapshot.restoreToSector(sector);
-        }
-        
-        // Restore tribes
-        for (TribeSnapshot tribeSnapshot : tribes) {
-            tribeSnapshot.restoreToWorld(world);
-        }
-        
-        // Note: Time and technology age are restored via World methods
-        // This requires adding methods to World class (see below)
-        
-        return world;
+        return World.getInstance();
     }
     
     // Getters for Jackson

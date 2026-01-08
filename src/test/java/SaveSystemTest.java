@@ -128,4 +128,29 @@ class SaveSystemTest {
 
         assertTrue(found, "Digimon with correct properties should be in snapshot");
     }
+
+    @Test
+    void testSaveAndLoadPreservesTimeAndAge() {
+        // Create some Digimon
+        Digimon testDigimon = new Digimon("TimeTestDigimon", 10, 100, 50, 20, "Rookie");
+        world.addDigimon(testDigimon);
+
+        // Manually set time and advance technology age
+        world.setTime(100);
+        world.getTechnologySystem().advanceAge(); // Should be Bronze Age
+
+        // Save the world
+        SaveSystem.saveToFile(world, TEST_SAVE_FILE);
+
+        // Load the snapshot
+        WorldSnapshot snapshot = SaveSystem.loadFromFile(TEST_SAVE_FILE);
+        assertNotNull(snapshot, "Snapshot should not be null");
+        assertEquals(100, snapshot.getTime(), "Time should be preserved");
+        assertEquals("Bronze Age", snapshot.getCurrentAge(), "Technology age should be preserved");
+
+        // Apply the snapshot to world
+        world.loadState(TEST_SAVE_FILE);
+        assertEquals(100, world.getTime(), "World time should be restored");
+        assertEquals("Bronze Age", world.getTechnologySystem().getCurrentAge(), "World tech age should be restored");
+    }
 }

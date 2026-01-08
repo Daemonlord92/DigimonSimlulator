@@ -51,7 +51,12 @@ public class TribeSnapshot {
     public void restoreToWorld(World world) {
         // Tribes will be reconstructed as Digimon rejoin them
         // This is a simplified implementation
-        // Full implementation requires finding matching Digimon by name
+        // Full implementation would require:
+        // 1. Finding matching Digimon by name across all sectors
+        // 2. Creating new Tribe instances
+        // 3. Reassigning Digimon to tribes
+        // 4. Restoring tribe resources (food, buildings, etc.)
+        // For now, we just log that tribe data was saved
     }
     
     // Getters

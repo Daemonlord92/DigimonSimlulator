@@ -16,6 +16,8 @@ import com.horrorcore.systems.lifecycle.RebirthSystem;
 import com.horrorcore.systems.movement.SectorMovement;
 import com.horrorcore.systems.persistence.SaveSystem;
 import com.horrorcore.systems.persistence.WorldSnapshot;
+import com.horrorcore.systems.persistence.SectorSnapshot;
+import com.horrorcore.systems.persistence.TribeSnapshot;
 
 import java.util.*;
 import java.util.List;
@@ -533,6 +535,10 @@ private int getEvolutionStageFactor(Digimon digimon) {
         return time;
     }
 
+    public void setTime(int time) {
+        this.time = time;
+    }
+
     public int getBuildings() {
         return tribes.stream().mapToInt(Tribe::getBuildings).sum();
     }
@@ -598,7 +604,7 @@ private int getEvolutionStageFactor(Digimon digimon) {
                 return;
             }
             this.digimonList = new ArrayList<Digimon>(); // Fixed: Use Digimon
-            this.tribes = Tribe.getAllTribes();
+            this.tribes = new HashSet<>();
             this.time = 0;
             this.sectors = new ArrayList<>();
             this.random = new Random();
@@ -646,7 +652,31 @@ private int getEvolutionStageFactor(Digimon digimon) {
                 return;
             }
             
-            snapshot.toWorld(); // This modifies the singleton instance
+            // Reset and restore world state
+            reset();
+            
+            // Restore sectors and Digimon
+            List<Sector> restoredSectors = this.getSectors();
+            for (int i = 0; i < Math.min(snapshot.getSectors().size(), restoredSectors.size()); i++) {
+                SectorSnapshot sectorSnapshot = snapshot.getSectors().get(i);
+                Sector sector = restoredSectors.get(i);
+                sectorSnapshot.restoreToSector(sector);
+            }
+            
+            // Restore time
+            this.time = snapshot.getTime();
+            
+            // Restore technology age
+            String currentAge = snapshot.getCurrentAge();
+            while (!this.technologySystem.getCurrentAge().equals(currentAge)) {
+                this.technologySystem.advanceAge();
+            }
+            
+            // Restore tribes (simplified - just store the snapshot data)
+            for (TribeSnapshot tribeSnapshot : snapshot.getTribes()) {
+                tribeSnapshot.restoreToWorld(this);
+            }
+            
             LOGGER.info("World state loaded successfully");
             
         } catch (InterruptedException e) {

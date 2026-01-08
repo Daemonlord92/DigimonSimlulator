@@ -1,5 +1,6 @@
 package com.horrorcore.grid;
 
+import com.horrorcore.config.SimulationConfig;
 import com.horrorcore.entity.Building;
 import com.horrorcore.entity.Tribe;
 
@@ -13,8 +14,8 @@ public class Grid {
     private final int width;
     private final int height;
     private final List<Building> buildings = new ArrayList<>();
-    private static final double BLOCKED_CELL_PROBABILITY = 0.15; // 15% chance for a cell to be blocked
-    private static final int MIN_PATH_WIDTH = 2;
+    private static final double BLOCKED_CELL_PROBABILITY = SimulationConfig.BLOCKED_CELL_PROBABILITY;
+    private static final int MIN_PATH_WIDTH = SimulationConfig.MIN_PATH_WIDTH;
 
     public Grid(int width, int height) {
         this.width = width;

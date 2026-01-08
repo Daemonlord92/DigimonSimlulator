@@ -1,5 +1,6 @@
 package com.horrorcore.entity;
 
+import com.horrorcore.config.SimulationConfig;
 import com.horrorcore.systems.events.SimulationEvent;
 import com.horrorcore.systems.events.SimulationSubject;
 
@@ -67,7 +68,8 @@ public class Digimon {
 
     public void attack(Digimon target) {
         // More aggressive Digimon deal more damage
-        if (this.aggression > 50 || Math.random() < personality.getAggression()) {
+        if (this.aggression > SimulationConfig.HIGH_AGGRESSION_THRESHOLD / 5 || 
+            Math.random() < personality.getAggression()) {
             int damage = switch (this.stage) {
                 case "Rookie" -> (int)(20 * (1 + personality.getAggression() * 0.5));
                 case "Champion" -> (int)(30 * (1 + personality.getAggression() * 0.5));

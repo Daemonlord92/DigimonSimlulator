@@ -167,6 +167,35 @@ public class VisualGUI extends Application implements SimulationObserver {
 
             infoTabs.getTabs().addAll(sectorsTab, tribesTab, eventsTab);
             mainContent.getChildren().addAll(worldInfoText, infoTabs);
+            
+            // Add control buttons
+            HBox controlButtons = new HBox(10);
+            controlButtons.setPadding(new Insets(10));
+
+            Button saveButton = new Button("Save World");
+            saveButton.setOnAction(e -> {
+                world.saveState();
+                showAlert("Save Successful", "World saved to file!");
+            });
+
+            Button loadButton = new Button("Load World");
+            loadButton.setOnAction(e -> {
+                world.loadState();
+                showAlert("Load Successful", "World loaded from file!");
+                updateWorldInfo(world);
+            });
+
+            Button listSavesButton = new Button("List Saves");
+            listSavesButton.setOnAction(e -> {
+                String[] saves = world.listSaveFiles();
+                String message = saves.length > 0 ? 
+                    String.join("\n", saves) : 
+                    "No save files found";
+                showAlert("Available Saves", message);
+            });
+
+            controlButtons.getChildren().addAll(saveButton, loadButton, listSavesButton);
+            root.setTop(controlButtons);
             root.setCenter(mainContent);
 
             Scene scene = new Scene(root, 1200, 800); // Increased width to accommodate info panel
@@ -456,6 +485,16 @@ public class VisualGUI extends Application implements SimulationObserver {
             case POLITICAL -> EventType.POLITICAL;
             case OTHER -> EventType.OTHER;
         };
+    }
+
+    private void showAlert(String title, String message) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.showAndWait();
+        });
     }
 
     public enum EventType {

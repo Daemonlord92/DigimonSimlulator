@@ -1,5 +1,6 @@
 package com.horrorcore;
 
+import com.horrorcore.config.SimulationConfig;
 import com.horrorcore.entity.CelestialDigimon;
 import com.horrorcore.entity.Digimon;
 import com.horrorcore.entity.Sector;
@@ -31,7 +32,6 @@ import java.util.logging.Logger;
 public class World {
     private static World INSTANCE;
     private static final Logger LOGGER = Logger.getLogger(World.class.getName());
-    private static final int EMPTY_SECTOR_REPOPULATION_INTERVAL = 10; // Ticks between empty sector checks
     private List<Digimon> digimonList;
     private Set<Tribe> tribes;
     private TechnologySystem technologySystem;
@@ -40,7 +40,12 @@ public class World {
     private Random random;
     private final ReadWriteLock worldLock = new ReentrantReadWriteLock();
     private final AtomicBoolean running = new AtomicBoolean(true);
-    private final List<Integer> agesRequired = List.of(500, 1000, 1500, 2000);
+    private final List<Integer> agesRequired = List.of(
+        SimulationConfig.AGE_ADVANCEMENT_TIMES[0],
+        SimulationConfig.AGE_ADVANCEMENT_TIMES[1], 
+        SimulationConfig.AGE_ADVANCEMENT_TIMES[2],
+        SimulationConfig.AGE_ADVANCEMENT_TIMES[3]
+    );
     private volatile long lastUpdateTime = 0;
     private WorldState savedState;
     private Thread watchdogThread;
@@ -227,8 +232,8 @@ public class World {
                         digimon.ageUp();
                         if (digimon instanceof CelestialDigimon celestial) {
                             List<Digimon> nearbyDigimon = sector.getDigimons();
-                            if (Math.random() < 0.3) { // 30% chance to help
-                                if (Math.random() < 0.5) {
+                            if (Math.random() < SimulationConfig.CELESTIAL_HELP_PROBABILITY) {
+                                if (Math.random() < SimulationConfig.CELESTIAL_HEAL_VS_FEED_RATIO) {
                                     celestial.provideFood(nearbyDigimon);
                                 } else {
                                     celestial.heal(nearbyDigimon);
@@ -237,7 +242,7 @@ public class World {
                         }
                         EvolutionSystem.checkEvolution(digimon);
 
-                        if (digimon.getAggression() > 250) {
+                        if (digimon.getAggression() > SimulationConfig.AGGRESSION_THRESHOLD) {
                             Digimon target = findTarget(digimon, sector);
                             if (target != null) {
                                 digimon.attack(target);
@@ -263,34 +268,57 @@ public class World {
                     });
 
                     List<Digimon> digimons = sector.getDigimons();
-                    RebirthSystem.checkRebirth(digimons);
-                        if (random.nextDouble() < 0.3 && digimons.size() < 25) {  // 30% chance each tick, higher population cap
-                            BirthSystem.randomBirth(digimons);
-                            // Could add multiple birth attempts
-                            if (random.nextDouble() < 0.5) {  // 50% chance of additional birth
-                                BirthSystem.randomBirth(digimons);
-                            }
-                        } if (digimons.isEmpty()) {
-                            BirthSystem.randomBirth(digimons);
-                        }
-                    if (time % 5 == 0) {
-                        EventSystem.triggerRandomEvent(INSTANCE);
-                    }
-
-                    if (time % EMPTY_SECTOR_REPOPULATION_INTERVAL == 0 && digimons.isEmpty()) {
-                        for (int i = 0; i < 5; i++) {
+                    int currentPopulation = digimons.size();
+                    
+                    // === DYNAMIC POPULATION CONTROL ===
+                    // Emergency spawn if sector is nearly empty
+                    if (currentPopulation < SimulationConfig.EMERGENCY_SPAWN_THRESHOLD) {
+                        for (int i = 0; i < SimulationConfig.EMERGENCY_SPAWN_COUNT; i++) {
                             Digimon newDigimon = DigimonGenerator.generateRandomDigimon();
                             sector.addDigimon(newDigimon);
                         }
+                        LOGGER.info("Emergency spawn in " + sector.getName() + 
+                                   " - population was " + currentPopulation);
                     }
+                    // High birth rate when underpopulated
+                    else if (currentPopulation < SimulationConfig.MIN_DIGIMON_PER_SECTOR) {
+                        if (time % SimulationConfig.BIRTH_CHECK_INTERVAL_TICKS == 0) {
+                            BirthSystem.randomBirth(digimons);
+                            if (random.nextDouble() < SimulationConfig.BIRTH_PROBABILITY_UNDERPOPULATED) {
+                                BirthSystem.randomBirth(digimons); // Second chance
+                            }
+                        }
+                    }
+                    // Normal birth rate when population is healthy
+                    else if (currentPopulation < SimulationConfig.MAX_DIGIMON_PER_SECTOR) {
+                        if (random.nextDouble() < SimulationConfig.BIRTH_PROBABILITY_NORMAL) {
+                            BirthSystem.randomBirth(digimons);
+                        }
+                    }
+                    // No births when at or above capacity - let natural death reduce population
+                    
+                    RebirthSystem.checkRebirth(digimons);
+                    if (time % SimulationConfig.EVENT_TRIGGER_INTERVAL == 0) {
+                        EventSystem.triggerRandomEvent(INSTANCE);
+                    }
+
                     if(random.nextBoolean()) {
                         FoodSystem.distributeFood(digimons);
                     }
 
                 }
 
+                // Log population statistics every 10 ticks
+                if (time % 10 == 0 && SimulationConfig.PERFORMANCE_LOGGING) {
+                    int totalPop = sectors.stream().mapToInt(s -> s.getDigimons().size()).sum();
+                    int minPop = sectors.stream().mapToInt(s -> s.getDigimons().size()).min().orElse(0);
+                    int maxPop = sectors.stream().mapToInt(s -> s.getDigimons().size()).max().orElse(0);
+                    LOGGER.info(String.format("Population - Total: %d, Min: %d, Max: %d, Tribes: %d",
+                        totalPop, minPop, maxPop, tribes.size()));
+                }
 
-                if(random.nextBoolean() && tribes.size() > 1) {
+
+                if(random.nextBoolean() && tribes.size() > 1 && time % SimulationConfig.POLITICS_UPDATE_INTERVAL == 0) {
                     LOGGER.info("Triggering Political Situation");
                     Politics.updatePoliticalSituation();
                 }
@@ -306,7 +334,7 @@ public class World {
 
 
                 int totalDigimon = sectors.stream().mapToInt(sector -> sector.getDigimons().size()).sum();
-                double deathProbability = 0.0005; // 5% chance of death per Digimon per time step
+                double deathProbability = SimulationConfig.BASE_DEATH_CHANCE;
                 int expectedDeaths = (int) Math.round(totalDigimon * deathProbability);
                 int actualDeaths = random.nextInt(expectedDeaths * 2 + 1); // Allow for some variability
 
@@ -339,7 +367,7 @@ public class World {
             SimulationSubject.getInstance().notifyWorldUpdate(this);
 
             try {
-                Thread.sleep(3000); // Sleep OUTSIDE lock
+                Thread.sleep(SimulationConfig.SIMULATION_TICK_MS); // Sleep OUTSIDE lock
             } catch (InterruptedException e) {
                 LOGGER.log(Level.WARNING, "Sleep interrupted", e);
                 Thread.currentThread().interrupt();
@@ -353,8 +381,8 @@ public class World {
         watchdogThread = new Thread(() -> {
             while (watchdogRunning.get()) {
                 try {
-                    Thread.sleep(10000);
-                    if (System.currentTimeMillis() - lastUpdateTime > 15000) {
+                    Thread.sleep(SimulationConfig.WATCHDOG_CHECK_INTERVAL_MS);
+                    if (System.currentTimeMillis() - lastUpdateTime > SimulationConfig.WATCHDOG_FREEZE_THRESHOLD_MS) {
                         LOGGER.warning("Simulation frozen!");
                     }
                 } catch (InterruptedException e) {

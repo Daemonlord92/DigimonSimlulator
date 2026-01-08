@@ -1,5 +1,6 @@
 package com.horrorcore.entity;
 
+import com.horrorcore.config.SimulationConfig;
 import com.horrorcore.grid.Grid;
 import com.horrorcore.grid.GridCell;
 import com.horrorcore.grid.PathFinder;
@@ -15,7 +16,7 @@ public class Sector {
     private final List<Digimon> digimons;
     private final List<Sector> adjacentSectors;
     private final Grid grid;
-    private static final int DEFAULT_GRID_SIZE = 20;
+    private static final int DEFAULT_GRID_SIZE = SimulationConfig.DEFAULT_GRID_SIZE;
     // Position cache for O(1) digimon lookups. Thread safety is ensured by World's worldLock.
     private final Map<Digimon, GridCell> digimonPositions = new HashMap<>();
 

@@ -35,13 +35,20 @@ public class SectorSnapshot {
         existing.forEach(sector::removeDigimon);
         
         // Add restored Digimon
+        int skippedCount = 0;
         for (DigimonSnapshot snapshot : digimons) {
             Digimon digimon = snapshot.toDigimon();
             try {
                 sector.addDigimon(digimon);
             } catch (IllegalStateException e) {
                 // Sector full, skip this Digimon
+                skippedCount++;
             }
+        }
+        
+        if (skippedCount > 0) {
+            java.util.logging.Logger.getLogger(SectorSnapshot.class.getName())
+                .warning("Skipped " + skippedCount + " Digimon(s) in sector " + name + " - sector full");
         }
     }
     

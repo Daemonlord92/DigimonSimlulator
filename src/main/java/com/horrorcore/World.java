@@ -668,8 +668,16 @@ private int getEvolutionStageFactor(Digimon digimon) {
             
             // Restore technology age
             String currentAge = snapshot.getCurrentAge();
-            while (!this.technologySystem.getCurrentAge().equals(currentAge)) {
+            int maxAdvances = 10; // Safety limit
+            int advances = 0;
+            while (!this.technologySystem.getCurrentAge().equals(currentAge) && advances < maxAdvances) {
                 this.technologySystem.advanceAge();
+                advances++;
+            }
+            
+            if (advances >= maxAdvances && !this.technologySystem.getCurrentAge().equals(currentAge)) {
+                LOGGER.warning("Could not restore technology age to " + currentAge + 
+                             ", stopped at " + this.technologySystem.getCurrentAge());
             }
             
             // Restore tribes (simplified - just store the snapshot data)

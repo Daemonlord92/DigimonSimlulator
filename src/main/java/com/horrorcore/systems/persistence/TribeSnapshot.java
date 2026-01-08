@@ -48,15 +48,24 @@ public class TribeSnapshot {
         );
     }
     
+    /**
+     * Restores tribe data to the world.
+     * Note: This is a simplified implementation as documented in the requirements.
+     * Full tribe restoration is complex and deferred to future enhancements.
+     * 
+     * Complete implementation would require:
+     * 1. Finding matching Digimon by name across all sectors
+     * 2. Creating new Tribe instances with preserved IDs
+     * 3. Reassigning Digimon to tribes while preserving relationships
+     * 4. Restoring tribe resources (food, buildings, military strength)
+     * 5. Restoring technology levels and profession assignments
+     * 
+     * Current behavior: Tribe data is saved but not fully restored.
+     * Tribes will naturally reform during simulation.
+     */
     public void restoreToWorld(World world) {
-        // Tribes will be reconstructed as Digimon rejoin them
-        // This is a simplified implementation
-        // Full implementation would require:
-        // 1. Finding matching Digimon by name across all sectors
-        // 2. Creating new Tribe instances
-        // 3. Reassigning Digimon to tribes
-        // 4. Restoring tribe resources (food, buildings, etc.)
-        // For now, we just log that tribe data was saved
+        // Intentionally simplified per requirements
+        // See method documentation for details on future enhancements
     }
     
     // Getters

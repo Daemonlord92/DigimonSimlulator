@@ -283,9 +283,12 @@ public class World {
                     // High birth rate when underpopulated
                     else if (currentPopulation < SimulationConfig.MIN_DIGIMON_PER_SECTOR) {
                         if (time % SimulationConfig.BIRTH_CHECK_INTERVAL_TICKS == 0) {
-                            BirthSystem.randomBirth(digimons);
                             if (random.nextDouble() < SimulationConfig.BIRTH_PROBABILITY_UNDERPOPULATED) {
-                                BirthSystem.randomBirth(digimons); // Second chance
+                                BirthSystem.randomBirth(digimons);
+                                // Second chance at another birth when critically underpopulated
+                                if (random.nextDouble() < SimulationConfig.BIRTH_PROBABILITY_UNDERPOPULATED) {
+                                    BirthSystem.randomBirth(digimons);
+                                }
                             }
                         }
                     }
@@ -318,7 +321,7 @@ public class World {
                 }
 
 
-                if(random.nextBoolean() && tribes.size() > 1 && time % SimulationConfig.POLITICS_UPDATE_INTERVAL == 0) {
+                if(time % SimulationConfig.POLITICS_UPDATE_INTERVAL == 0 && tribes.size() > 1 && random.nextBoolean()) {
                     LOGGER.info("Triggering Political Situation");
                     Politics.updatePoliticalSituation();
                 }

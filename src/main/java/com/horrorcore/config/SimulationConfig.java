@@ -24,6 +24,7 @@ public class SimulationConfig {
     public static final int GUI_UPDATE_INTERVAL_MS = 1000;
     public static final int MAX_PATHFINDING_DISTANCE = 15;
     public static final int PATHFINDING_COOLDOWN_TICKS = 3;
+    public static final int SIMULATION_SPEED_DIVISOR = 6; // For fine-tuning simulation thread speed
     
     // Operation throttling (run every N ticks)
     public static final int EVOLUTION_CHECK_INTERVAL = 1; // Every tick for now

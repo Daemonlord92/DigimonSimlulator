@@ -106,7 +106,7 @@ public class DigimonSimulator extends Application {
                                             .sum();
                     LOGGER.info("Total Digimons: " + totalDigimons);
 
-                    Thread.sleep(SimulationConfig.SIMULATION_TICK_MS / 6); // Simulation speed control
+                    Thread.sleep(SimulationConfig.SIMULATION_TICK_MS / SimulationConfig.SIMULATION_SPEED_DIVISOR); // Simulation speed control
                 }
             } catch (InterruptedException e) {
                 LOGGER.log(Level.INFO, "Simulation thread interrupted", e);

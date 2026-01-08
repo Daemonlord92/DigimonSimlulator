@@ -5,7 +5,9 @@ import com.horrorcore.grid.GridCell;
 import com.horrorcore.grid.PathFinder;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class Sector {
@@ -14,6 +16,8 @@ public class Sector {
     private final List<Sector> adjacentSectors;
     private final Grid grid;
     private static final int DEFAULT_GRID_SIZE = 20;
+    // Position cache for O(1) digimon lookups. Thread safety is ensured by World's worldLock.
+    private final Map<Digimon, GridCell> digimonPositions = new HashMap<>();
 
     public Sector(String name) {
         this.name = name;
@@ -46,6 +50,7 @@ public class Sector {
             GridCell cell = emptyCell.get();
             cell.setOccupant(digimon);
             digimons.add(digimon);
+            digimonPositions.put(digimon, cell); // CACHE POSITION
         } else {
             throw new IllegalStateException("No empty cells available in sector " + name);
         }
@@ -65,15 +70,9 @@ public class Sector {
     }
 
     public void removeDigimon(Digimon digimon) {
-        // Find and clear the cell containing this Digimon
-        for (int x = 0; x < DEFAULT_GRID_SIZE; x++) {
-            for (int y = 0; y < DEFAULT_GRID_SIZE; y++) {
-                GridCell cell = grid.getCell(x, y);
-                if (digimon.equals(cell.getOccupant())) {
-                    cell.setOccupant(null);
-                    break;
-                }
-            }
+        GridCell cell = digimonPositions.remove(digimon); // O(1) lookup
+        if (cell != null) {
+            cell.setOccupant(null);
         }
         digimons.remove(digimon);
     }
@@ -99,17 +98,15 @@ public class Sector {
             return false;
         }
 
-        // Find the Digimon's current cell and clear it
-        for (int x = 0; x < DEFAULT_GRID_SIZE; x++) {
-            for (int y = 0; y < DEFAULT_GRID_SIZE; y++) {
-                GridCell cell = grid.getCell(x, y);
-                if (digimon.equals(cell.getOccupant())) {
-                    cell.setOccupant(null);
-                    targetCell.setOccupant(digimon);
-                    return true;
-                }
-            }
+        // Use cached position instead of scanning
+        GridCell currentCell = digimonPositions.get(digimon);
+        if (currentCell != null) {
+            currentCell.setOccupant(null);
+            targetCell.setOccupant(digimon);
+            digimonPositions.put(digimon, targetCell); // Update cache
+            return true;
         }
+        
         return false;
     }
 

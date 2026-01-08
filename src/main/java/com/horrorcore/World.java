@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 public class World {
     private static World INSTANCE;
     private static final Logger LOGGER = Logger.getLogger(World.class.getName());
+    private static final int EMPTY_SECTOR_REPOPULATION_INTERVAL = 10; // Ticks between empty sector checks
     private List<Digimon> digimonList;
     private Set<Tribe> tribes;
     private TechnologySystem technologySystem;
@@ -247,9 +248,6 @@ public class World {
                             SectorMovement.moveDigimon(digimon, sector, random);
                         }
                     }
-                    for (int i = 0; i < 5; i++) {
-                        DigimonGenerator.generateRandomDigimon();
-                    }
                         INSTANCE.getTribes().forEach(tribe -> {
                             tribe.getMembers().forEach(digimon -> {
                                 if (digimon.getProfession() == null || random.nextDouble() < 0.1) {
@@ -279,7 +277,7 @@ public class World {
                         EventSystem.triggerRandomEvent(INSTANCE);
                     }
 
-                    if (digimons.isEmpty()) {
+                    if (time % EMPTY_SECTOR_REPOPULATION_INTERVAL == 0 && digimons.isEmpty()) {
                         for (int i = 0; i < 5; i++) {
                             Digimon newDigimon = DigimonGenerator.generateRandomDigimon();
                             sector.addDigimon(newDigimon);
@@ -324,11 +322,9 @@ public class World {
                     LOGGER.info("Removed " + tribesToRemove.size() + " empty tribes.");
                 }
                 tribes = Tribe.getAllTribes();
-                SimulationSubject.getInstance().notifyWorldUpdate(this); // Use the passed GUI instance
 
                 time++;
                     LOGGER.info("World simulated. Time: " + time + ", Tech Age: " + technologySystem.getCurrentAge());
-                System.gc();
             } catch (InterruptedException e) {
                 LOGGER.log(Level.WARNING, "Simulation interrupted", e);
                 Thread.currentThread().interrupt();
@@ -339,11 +335,11 @@ public class World {
                 }
             }
 
-            // Update GUI on EDT
+            // Update GUI ONCE, OUTSIDE the lock
             SimulationSubject.getInstance().notifyWorldUpdate(this);
 
             try {
-                Thread.sleep(3000); // Adjust as needed
+                Thread.sleep(3000); // Sleep OUTSIDE lock
             } catch (InterruptedException e) {
                 LOGGER.log(Level.WARNING, "Sleep interrupted", e);
                 Thread.currentThread().interrupt();
@@ -460,32 +456,17 @@ private int getEvolutionStageFactor(Digimon digimon) {
      * @return A randomly selected Digimon target from the current or adjacent sectors, or null if no targets are available.
      */
     private Digimon findTarget(Digimon attacker, Sector currentSector) {
-        Iterator<Digimon> iterator = new Iterator<>() {
-            private int index = 0;
-            @Override
-            public boolean hasNext() {
-                return index < currentSector.getAdjacentSectors().size();
-            }
-            @Override
-            public Digimon next() {
-                return index++ > 0 ? currentSector.getDigimons().get(index - 1) : null;
-            }
-        };
-
-        List<Digimon> possibleTargets = new ArrayList<>();
+        List<Digimon> possibleTargets = new ArrayList<>(currentSector.getDigimons());
+        
+        // Add digimons from adjacent sectors
         for (Sector adjacentSector : currentSector.getAdjacentSectors()) {
-            if (iterator.hasNext()) {
-                possibleTargets.add(iterator.next());
-            } else {
-                possibleTargets.addAll(adjacentSector.getDigimons());
-            }
+            possibleTargets.addAll(adjacentSector.getDigimons());
         }
-        possibleTargets.remove(attacker);
-
-        if (!possibleTargets.isEmpty()) {
-            return possibleTargets.get(random.nextInt(possibleTargets.size()));
-        }
-        return null;
+        
+        possibleTargets.remove(attacker); // Don't attack self
+        
+        return possibleTargets.isEmpty() ? null : 
+               possibleTargets.get(random.nextInt(possibleTargets.size()));
     }
 
     /**

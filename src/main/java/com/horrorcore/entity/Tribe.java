@@ -1,6 +1,7 @@
 package com.horrorcore.entity;
 
 import com.horrorcore.*;
+import com.horrorcore.config.SimulationConfig;
 import com.horrorcore.systems.building.BuildingSystem;
 import com.horrorcore.systems.events.SimulationEvent;
 import com.horrorcore.systems.events.SimulationSubject;
@@ -22,7 +23,7 @@ public class Tribe {
     private int researchPoints;
     private final Set<Digimon> recentlyFed = new HashSet<>();
     private long lastFeedTime = 0;
-    private static final long FEED_COOLDOWN = 1000;
+    private static final long FEED_COOLDOWN = SimulationConfig.TRIBE_FEED_COOLDOWN_MS;
 
     // Constructors
 
@@ -31,8 +32,8 @@ public class Tribe {
         this.name = name;
         this.members = new ArrayList<>();
         this.buildings = 0;
-        this.totalFood = 150;
-        this.militaryStrength = 3;
+        this.totalFood = SimulationConfig.INITIAL_TRIBE_FOOD;
+        this.militaryStrength = SimulationConfig.INITIAL_MILITARY_STRENGTH;
         this.researchPoints = 0;
         this.technologySystem = new TechnologySystem();
         nextId++;
@@ -54,7 +55,7 @@ public class Tribe {
                     .toList());
         }
 
-        if (availableDigimon.size() >= 2) {
+        if (availableDigimon.size() >= SimulationConfig.MIN_DIGIMON_FOR_TRIBE) {
             Digimon leader = availableDigimon.get(random.nextInt(availableDigimon.size()));
             String tribeName = "Tribe of " + leader.getName();
             Tribe newTribe = new Tribe(nextId, tribeName);
@@ -63,7 +64,7 @@ public class Tribe {
             availableDigimon.remove(leader);
             leader.setProfession("Farmer");
 
-            for (int i = 0; i < 2 && !availableDigimon.isEmpty(); i++) {
+            for (int i = 0; i < SimulationConfig.INITIAL_TRIBE_SIZE - 1 && !availableDigimon.isEmpty(); i++) {
                 Digimon member = availableDigimon.remove(random.nextInt(availableDigimon.size()));
                 member.setProfession("Farmer");
                 newTribe.addMember(member);

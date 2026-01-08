@@ -1,5 +1,6 @@
 package com.horrorcore;
 
+import com.horrorcore.config.SimulationConfig;
 import com.horrorcore.entity.CelestialDigimon;
 import com.horrorcore.entity.Digimon;
 import com.horrorcore.gui.VisualGUI;
@@ -40,13 +41,13 @@ public class DigimonSimulator extends Application {
             LOGGER.info("World initialized with sectors: " + world.getSectors());
             
             // Add Digimons
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < SimulationConfig.INITIAL_DIGIMON_COUNT; i++) {
                 Digimon digimon = DigimonGenerator.generateRandomDigimon();
                 world.addDigimon(digimon);
                 LOGGER.info("Added Digimon: " + digimon.getName());
             }
             
-            for(int i = 0; i < 10; i++) {
+            for(int i = 0; i < SimulationConfig.INITIAL_CELESTIAL_COUNT; i++) {
                 CelestialDigimon celestialDigimon = DigimonGenerator.generateCelestialDigimon();
                 world.addDigimon(celestialDigimon);
                 assert celestialDigimon != null;
@@ -59,7 +60,8 @@ public class DigimonSimulator extends Application {
             LOGGER.info("GUI initialized and started");
 
             // Create a Timeline for GUI updates
-            guiUpdateTimeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
+            guiUpdateTimeline = new Timeline(new KeyFrame(
+                Duration.millis(SimulationConfig.GUI_UPDATE_INTERVAL_MS), event -> {
                 gui.updateWorldInfo(world);
                 gui.updateSectorInfo(world.getSectors());
                 SimulationSubject.getInstance().notifyWorldUpdate(world);
@@ -99,7 +101,7 @@ public class DigimonSimulator extends Application {
                                             .sum();
                     LOGGER.info("Total Digimons: " + totalDigimons);
 
-                    Thread.sleep(500); // Simulation speed control
+                    Thread.sleep(SimulationConfig.SIMULATION_TICK_MS / SimulationConfig.RESPONSIVENESS_DIVISOR); // Faster than main tick for responsiveness
                 }
             } catch (InterruptedException e) {
                 LOGGER.log(Level.INFO, "Simulation thread interrupted", e);

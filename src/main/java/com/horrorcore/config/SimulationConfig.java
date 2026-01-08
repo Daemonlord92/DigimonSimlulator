@@ -34,7 +34,7 @@ public class SimulationConfig {
     public static final int POLITICS_UPDATE_INTERVAL = 1;
     
     // ===== DEATH SYSTEM =====
-    public static final double BASE_DEATH_CHANCE = 0.0005; // 0.05%
+    public static final double BASE_DEATH_CHANCE = 0.0005; // 0.05% base chance
     public static final int YOUNG_AGE_THRESHOLD = 10;
     public static final int OLD_AGE_THRESHOLD = 50;
     public static final double OLD_AGE_DEATH_MULTIPLIER = 2.0;

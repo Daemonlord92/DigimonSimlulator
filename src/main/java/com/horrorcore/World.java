@@ -329,7 +329,7 @@ public class World {
 
                 int currentAgeIndex = Arrays.asList(TechnologySystem.AGES).indexOf(technologySystem.getCurrentAge());
                 // Advance technological age
-                if (time == agesRequired.get(currentAgeIndex)) {
+                if (currentAgeIndex >= 0 && currentAgeIndex < agesRequired.size() && time == agesRequired.get(currentAgeIndex)) {
                     technologySystem.advanceAge();
                 }
 
@@ -550,12 +550,14 @@ private int getEvolutionStageFactor(Digimon digimon) {
      * based on the current time and the predefined age requirements.
      *
      * @return An integer representing the number of time units remaining until the next age.
-     *         If the current age is the final age, this method will return a negative value
-     *         indicating the number of time units that have passed since the last age transition.
+     *         If the current age is the final age or if the age is not found, returns 0.
      */
     public int getTimeToNextAge() {
         int currentAgeIndex = Arrays.asList(TechnologySystem.AGES).indexOf(technologySystem.getCurrentAge());
-        return agesRequired.get(currentAgeIndex) - time;
+        if (currentAgeIndex >= 0 && currentAgeIndex < agesRequired.size()) {
+            return agesRequired.get(currentAgeIndex) - time;
+        }
+        return 0; // Return 0 if age not found or out of bounds
     }
 
     public Tribe getTribeByName(Tribe tribe) {

@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 public class World {
     private static World INSTANCE;
     private static final Logger LOGGER = Logger.getLogger(World.class.getName());
-    private static final int EMPTY_SECTOR_REPOPULATION_INTERVAL = 10; // Ticks between empty sector checks
     private List<Digimon> digimonList;
     private Set<Tribe> tribes;
     private TechnologySystem technologySystem;
@@ -240,7 +239,7 @@ public class World {
                             if (digimon instanceof CelestialDigimon celestial) {
                                 List<Digimon> nearbyDigimon = digimons;
                                 if (Math.random() < SimulationConfig.CELESTIAL_HELP_PROBABILITY) {
-                                    if (Math.random() < 0.5) {
+                                    if (Math.random() < SimulationConfig.CELESTIAL_FOOD_VS_HEAL_PROBABILITY) {
                                         celestial.provideFood(nearbyDigimon);
                                     } else {
                                         celestial.heal(nearbyDigimon);
@@ -273,7 +272,7 @@ public class World {
                                 if (random.nextDouble() < SimulationConfig.BIRTH_PROBABILITY_LOW) {
                                     BirthSystem.randomBirth(digimons);
                                     totalBirths++;
-                                    if (random.nextDouble() < 0.5) { // 50% chance of second birth
+                                    if (random.nextDouble() < SimulationConfig.SECOND_BIRTH_PROBABILITY_LOW) { // 50% chance of second birth
                                         BirthSystem.randomBirth(digimons);
                                         totalBirths++;
                                     }

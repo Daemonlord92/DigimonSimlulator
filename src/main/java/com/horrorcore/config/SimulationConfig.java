@@ -15,6 +15,7 @@ public class SimulationConfig {
     // ===== BIRTH SYSTEM =====
     public static final double BIRTH_PROBABILITY_NORMAL = 0.3; // 30% chance when population is normal
     public static final double BIRTH_PROBABILITY_LOW = 0.7;    // 70% chance when underpopulated
+    public static final double SECOND_BIRTH_PROBABILITY_LOW = 0.5; // 50% chance of second birth when underpopulated
     public static final int BIRTH_CHECK_INTERVAL = 1;          // Check every N ticks
     public static final int EMERGENCY_SPAWN_INTERVAL = 10;     // Spawn emergency Digimon every N ticks when empty
     public static final int EMERGENCY_SPAWN_COUNT = 5;         // How many to spawn in emergency
@@ -27,6 +28,7 @@ public class SimulationConfig {
     
     // ===== PERFORMANCE & TIMING =====
     public static final int SIMULATION_TICK_MS = 3000;          // Main simulation loop delay
+    public static final int RESPONSIVENESS_DIVISOR = 6;         // Divisor for faster responsive tick rate
     public static final int GUI_UPDATE_INTERVAL_MS = 1000;      // GUI refresh rate
     public static final int WATCHDOG_CHECK_INTERVAL_MS = 10000; // Watchdog thread check interval
     public static final int WATCHDOG_FREEZE_THRESHOLD_MS = 15000; // Time before declaring simulation frozen
@@ -45,6 +47,7 @@ public class SimulationConfig {
     // ===== COMBAT SYSTEM =====
     public static final int AGGRESSION_THRESHOLD = 250;         // Aggression level to initiate combat
     public static final double CELESTIAL_HELP_PROBABILITY = 0.3; // 30% chance Celestial helps per tick
+    public static final double CELESTIAL_FOOD_VS_HEAL_PROBABILITY = 0.5; // 50% chance to provide food vs heal
     
     // ===== TRIBE SYSTEM =====
     public static final int MIN_DIGIMON_FOR_TRIBE = 2;          // Minimum Digimon needed to form tribe

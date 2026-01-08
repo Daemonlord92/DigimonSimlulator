@@ -1,5 +1,6 @@
 package com.horrorcore;
 
+import com.horrorcore.config.SimulationConfig;
 import com.horrorcore.entity.CelestialDigimon;
 import com.horrorcore.entity.Digimon;
 import com.horrorcore.entity.Sector;
@@ -22,6 +23,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Represents the Digimon world, containing all the elements and systems of the simulation.
@@ -40,11 +42,16 @@ public class World {
     private Random random;
     private final ReadWriteLock worldLock = new ReentrantReadWriteLock();
     private final AtomicBoolean running = new AtomicBoolean(true);
-    private final List<Integer> agesRequired = List.of(500, 1000, 1500, 2000);
+    private final List<Integer> agesRequired = Arrays.stream(SimulationConfig.AGE_REQUIREMENTS)
+        .boxed()
+        .collect(Collectors.toList());
     private volatile long lastUpdateTime = 0;
     private WorldState savedState;
     private Thread watchdogThread;
     private final AtomicBoolean watchdogRunning = new AtomicBoolean(false);
+    private int peakPopulation = 0;
+    private int totalBirths = 0;
+    private int totalDeaths = 0;
 
     /**
      * Constructs a new World object, initializing all its components.
@@ -223,75 +230,105 @@ public class World {
                     }
 
                     for (Sector sector : sectors) {
-                    for (Digimon digimon : sector.getDigimons()) {
-                        digimon.ageUp();
-                        if (digimon instanceof CelestialDigimon celestial) {
-                            List<Digimon> nearbyDigimon = sector.getDigimons();
-                            if (Math.random() < 0.3) { // 30% chance to help
-                                if (Math.random() < 0.5) {
-                                    celestial.provideFood(nearbyDigimon);
-                                } else {
-                                    celestial.heal(nearbyDigimon);
+                        List<Digimon> digimons = sector.getDigimons();
+                        int currentPopulation = digimons.size();
+                        
+                        // Process each Digimon
+                        for (Digimon digimon : digimons) {
+                            digimon.ageUp();
+                            
+                            if (digimon instanceof CelestialDigimon celestial) {
+                                List<Digimon> nearbyDigimon = digimons;
+                                if (Math.random() < SimulationConfig.CELESTIAL_HELP_PROBABILITY) {
+                                    if (Math.random() < 0.5) {
+                                        celestial.provideFood(nearbyDigimon);
+                                    } else {
+                                        celestial.heal(nearbyDigimon);
+                                    }
                                 }
                             }
-                        }
-                        EvolutionSystem.checkEvolution(digimon);
+                            
+                            // Throttle evolution checks
+                            if (time % SimulationConfig.EVOLUTION_CHECK_INTERVAL == 0) {
+                                EvolutionSystem.checkEvolution(digimon);
+                            }
 
-                        if (digimon.getAggression() > 250) {
-                            Digimon target = findTarget(digimon, sector);
-                            if (target != null) {
-                                digimon.attack(target);
+                            if (digimon.getAggression() > SimulationConfig.AGGRESSION_THRESHOLD) {
+                                Digimon target = findTarget(digimon, sector);
+                                if (target != null) {
+                                    digimon.attack(target);
+                                }
+                            }
+
+                            if (digimon.getAge() <= SimulationConfig.MOVEMENT_AGE_THRESHOLD || 
+                                digimon.getHealth() >= SimulationConfig.MOVEMENT_HEALTH_THRESHOLD && random.nextBoolean()) {
+                                SectorMovement.moveDigimon(digimon, sector, random);
                             }
                         }
-
-                        if (digimon.getAge() <= 25 || digimon.getHealth() >= 15 && random.nextBoolean()) {
-                            SectorMovement.moveDigimon(digimon, sector, random);
+                        
+                        // DYNAMIC POPULATION CONTROL
+                        if (time % SimulationConfig.BIRTH_CHECK_INTERVAL == 0) {
+                            if (currentPopulation < SimulationConfig.MIN_DIGIMON_PER_SECTOR) {
+                                // Emergency repopulation - high birth rate
+                                if (random.nextDouble() < SimulationConfig.BIRTH_PROBABILITY_LOW) {
+                                    BirthSystem.randomBirth(digimons);
+                                    totalBirths++;
+                                    if (random.nextDouble() < 0.5) { // 50% chance of second birth
+                                        BirthSystem.randomBirth(digimons);
+                                        totalBirths++;
+                                    }
+                                }
+                            } else if (currentPopulation < SimulationConfig.MAX_DIGIMON_PER_SECTOR) {
+                                // Normal population - standard birth rate
+                                if (random.nextDouble() < SimulationConfig.BIRTH_PROBABILITY_NORMAL) {
+                                    BirthSystem.randomBirth(digimons);
+                                    totalBirths++;
+                                }
+                            }
+                            // If at or above MAX_DIGIMON_PER_SECTOR, no births occur
                         }
-                    }
+                        
+                        // Emergency spawn only when sector is completely empty
+                        if (time % SimulationConfig.EMERGENCY_SPAWN_INTERVAL == 0 && digimons.isEmpty()) {
+                            for (int i = 0; i < SimulationConfig.EMERGENCY_SPAWN_COUNT; i++) {
+                                Digimon newDigimon = DigimonGenerator.generateRandomDigimon();
+                                sector.addDigimon(newDigimon);
+                            }
+                            LOGGER.info("Emergency spawn in " + sector.getName() + ": " + SimulationConfig.EMERGENCY_SPAWN_COUNT + " Digimon");
+                        }
+                        
+                        // Tribe management
                         INSTANCE.getTribes().forEach(tribe -> {
                             tribe.getMembers().forEach(digimon -> {
-                                if (digimon.getProfession() == null || random.nextDouble() < 0.1) {
+                                if (digimon.getProfession() == null || random.nextDouble() < SimulationConfig.PROFESSION_REASSIGNMENT_CHANCE) {
                                     String randomProfession = tribe.getTechnologySystem().getRandomProfession();
                                     if (randomProfession != null) {
                                         tribe.getTechnologySystem().assignProfession(digimon, randomProfession);
-                                        LOGGER.info(digimon.getName() + " assigned profession: " + randomProfession);
+                                        if (SimulationConfig.VERBOSE_LOGGING) {
+                                            LOGGER.info(digimon.getName() + " assigned profession: " + randomProfession);
+                                        }
                                     }
                                 }
                             });
                             tribe.getTechnologySystem().performWork(INSTANCE);
                             tribe.feedTribe();
-                    });
+                        });
 
-                    List<Digimon> digimons = sector.getDigimons();
-                    RebirthSystem.checkRebirth(digimons);
-                        if (random.nextDouble() < 0.3 && digimons.size() < 25) {  // 30% chance each tick, higher population cap
-                            BirthSystem.randomBirth(digimons);
-                            // Could add multiple birth attempts
-                            if (random.nextDouble() < 0.5) {  // 50% chance of additional birth
-                                BirthSystem.randomBirth(digimons);
-                            }
-                        } if (digimons.isEmpty()) {
-                            BirthSystem.randomBirth(digimons);
-                        }
-                    if (time % 5 == 0) {
-                        EventSystem.triggerRandomEvent(INSTANCE);
-                    }
-
-                    if (time % EMPTY_SECTOR_REPOPULATION_INTERVAL == 0 && digimons.isEmpty()) {
-                        for (int i = 0; i < 5; i++) {
-                            Digimon newDigimon = DigimonGenerator.generateRandomDigimon();
-                            sector.addDigimon(newDigimon);
+                        RebirthSystem.checkRebirth(digimons);
+                        
+                        if (random.nextBoolean()) {
+                            FoodSystem.distributeFood(digimons);
                         }
                     }
-                    if(random.nextBoolean()) {
-                        FoodSystem.distributeFood(digimons);
-                    }
 
+                if (time % SimulationConfig.EVENT_TRIGGER_INTERVAL == 0) {
+                    EventSystem.triggerRandomEvent(INSTANCE);
                 }
 
-
-                if(random.nextBoolean() && tribes.size() > 1) {
-                    LOGGER.info("Triggering Political Situation");
+                if (time % SimulationConfig.POLITICS_UPDATE_INTERVAL == 0 && tribes.size() > 1) {
+                    if (SimulationConfig.VERBOSE_LOGGING) {
+                        LOGGER.info("Triggering Political Situation");
+                    }
                     Politics.updatePoliticalSituation();
                 }
                 // Update political relationships
@@ -306,7 +343,7 @@ public class World {
 
 
                 int totalDigimon = sectors.stream().mapToInt(sector -> sector.getDigimons().size()).sum();
-                double deathProbability = 0.0005; // 5% chance of death per Digimon per time step
+                double deathProbability = SimulationConfig.BASE_DEATH_PROBABILITY;
                 int expectedDeaths = (int) Math.round(totalDigimon * deathProbability);
                 int actualDeaths = random.nextInt(expectedDeaths * 2 + 1); // Allow for some variability
 
@@ -322,6 +359,20 @@ public class World {
                     LOGGER.info("Removed " + tribesToRemove.size() + " empty tribes.");
                 }
                 tribes = Tribe.getAllTribes();
+
+                // Track population statistics
+                int currentTotalPopulation = sectors.stream()
+                    .mapToInt(s -> s.getDigimons().size())
+                    .sum();
+
+                if (currentTotalPopulation > peakPopulation) {
+                    peakPopulation = currentTotalPopulation;
+                }
+
+                if (time % 100 == 0 && SimulationConfig.LOG_PERFORMANCE) {
+                    LOGGER.info(String.format("Population Stats - Current: %d, Peak: %d, Births: %d, Deaths: %d",
+                        currentTotalPopulation, peakPopulation, totalBirths, totalDeaths));
+                }
 
                 time++;
                     LOGGER.info("World simulated. Time: " + time + ", Tech Age: " + technologySystem.getCurrentAge());
@@ -339,7 +390,7 @@ public class World {
             SimulationSubject.getInstance().notifyWorldUpdate(this);
 
             try {
-                Thread.sleep(3000); // Sleep OUTSIDE lock
+                Thread.sleep(SimulationConfig.SIMULATION_TICK_MS); // Sleep OUTSIDE lock
             } catch (InterruptedException e) {
                 LOGGER.log(Level.WARNING, "Sleep interrupted", e);
                 Thread.currentThread().interrupt();
@@ -353,8 +404,8 @@ public class World {
         watchdogThread = new Thread(() -> {
             while (watchdogRunning.get()) {
                 try {
-                    Thread.sleep(10000);
-                    if (System.currentTimeMillis() - lastUpdateTime > 15000) {
+                    Thread.sleep(SimulationConfig.WATCHDOG_CHECK_INTERVAL_MS);
+                    if (System.currentTimeMillis() - lastUpdateTime > SimulationConfig.WATCHDOG_FREEZE_THRESHOLD_MS) {
                         LOGGER.warning("Simulation frozen!");
                     }
                 } catch (InterruptedException e) {
@@ -391,6 +442,7 @@ private void simulateRandomDeath() {
                             digimon.leaveTribe();
                         }
                         digimonSector.removeDigimon(digimon);
+                        totalDeaths++;
                         LOGGER.info(digimon.getName() + " has died in " + digimonSector.getName());
                         SimulationSubject.getInstance().notifyEvent(digimon.getName() + " has died in " + digimonSector.getName(), SimulationEvent.EventType.OTHER);
                     }
@@ -403,7 +455,7 @@ private void simulateRandomDeath() {
 
 
 private boolean shouldDigimonDie(Digimon digimon) {
-    int baseDeathChance = 1; // Reduced from 5% to 1% base chance of death
+    int baseDeathChance = SimulationConfig.BASE_DEATH_CHANCE; // Reduced from 5% to 1% base chance of death
     int healthFactor = Math.max(0, 100 - digimon.getHealth()) / 4; // Reduced impact of health
     int evolutionStageFactor = getEvolutionStageFactor(digimon);
     Optional<Tribe> tribe = Optional.ofNullable(digimon.getTribe());
@@ -416,9 +468,9 @@ private boolean shouldDigimonDie(Digimon digimon) {
     }
     
     // Apply age factor
-    if (digimon.getAge() < 10) {
+    if (digimon.getAge() < SimulationConfig.YOUNG_AGE_THRESHOLD) {
         totalDeathChance += 1; // Very young Digimon are slightly more vulnerable
-    } else if (digimon.getAge() > 50) {
+    } else if (digimon.getAge() > SimulationConfig.OLD_AGE_THRESHOLD) {
         totalDeathChance += 2; // Old Digimon are more vulnerable
     }
     
@@ -537,6 +589,11 @@ private int getEvolutionStageFactor(Digimon digimon) {
     public Set<Tribe> getTribes() {
         return tribes;
     }
+    
+    public int getPeakPopulation() { return peakPopulation; }
+    public int getTotalBirths() { return totalBirths; }
+    public int getTotalDeaths() { return totalDeaths; }
+    
     public void saveState() {
         boolean lockAcquired = false;
         try {
